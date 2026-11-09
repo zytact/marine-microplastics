@@ -36,7 +36,9 @@ from tempfile import TemporaryDirectory
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import h5py
 import shap
+import shapefile
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -324,10 +326,10 @@ Predictor = Callable[[pd.DataFrame], np.ndarray]
 Model = Callable[[pd.DataFrame], Predictor]
 
 
-def preprocessor() -> ColumnTransformer:
+def preprocessor(features: list[str] = FEATURES) -> ColumnTransformer:
     return ColumnTransformer([
-        ("num", make_pipeline(SimpleImputer(strategy="median"), StandardScaler()), NUMERIC),
-        ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), CATEGORICAL),
+        ("num", make_pipeline(SimpleImputer(strategy="median"), StandardScaler()), [f for f in features if f not in CATEGORICAL]),
+        ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), [f for f in features if f in CATEGORICAL]),
     ])
 
 
@@ -338,11 +340,11 @@ def clip_to_range(train: pd.DataFrame) -> Callable[[pd.DataFrame], pd.DataFrame]
     return lambda frame: frame.assign(**{c: frame[c].clip(low[c], high[c]) for c in NUMERIC})
 
 
-def sklearn_model(estimator) -> Model:
+def sklearn_model(estimator, features: list[str] = FEATURES) -> Model:
     def fit(train: pd.DataFrame) -> Predictor:
         clip = clip_to_range(train)
-        pipe = make_pipeline(preprocessor(), clone(estimator)).fit(train[FEATURES], train.y)
-        return lambda test: pipe.predict(clip(test)[FEATURES])
+        pipe = make_pipeline(preprocessor(features), clone(estimator)).fit(train[features], train.y)
+        return lambda test: pipe.predict(clip(test)[features])
     return fit
 
 
@@ -465,9 +467,13 @@ def score(pred: pd.Series) -> dict[str, float]:
     return metrics(y.to_numpy(), pred.to_numpy()) | {"study MAE": study_mae}
 
 
-def out_of_fold(model: Model, scheme: str) -> pd.Series:
+Folds = list[tuple[np.ndarray, np.ndarray]]
+
+
+def out_of_fold(model: Model, folds: Folds) -> pd.Series:
+    """Out-of-fold predictions indexed like df. Rows in no test fold stay NaN."""
     pred = pd.Series(np.nan, index=df.index)
-    for train_idx, test_idx in SPLITS[scheme]:
+    for train_idx, test_idx in folds:
         pred.iloc[test_idx] = model(df.iloc[train_idx])(df.iloc[test_idx])
     return pred
 
@@ -478,7 +484,7 @@ SHOWN = ["R2", "MAE", "study MAE", "within 1 log"]
 # ## 4. Model comparison
 
 # %%
-predictions = {(name, scheme): out_of_fold(model, scheme) for name, model in MODELS.items() for scheme in SPLITS}
+predictions = {(name, scheme): out_of_fold(model, SPLITS[scheme]) for name, model in MODELS.items() for scheme in SPLITS}
 results = pd.DataFrame(
     [{"model": name, "scheme": scheme} | score(pred) for (name, scheme), pred in predictions.items()]
 ).set_index(["model", "scheme"])
@@ -574,7 +580,7 @@ ABLATIONS = {
     "all features + study ID": CATBOOST_FEATURES + ["study"],
 }
 pd.DataFrame({
-    (name, scheme): score(out_of_fold(lambda t, f=features: fit_catboost(t, f), scheme))
+    (name, scheme): score(out_of_fold(lambda t, f=features: fit_catboost(t, f), SPLITS[scheme]))
     for name, features in ABLATIONS.items()
     for scheme in ("random", "grouped")
 }).T[SHOWN].unstack()
@@ -585,6 +591,252 @@ pd.DataFrame({
 # folds but fall below zero on new studies. On random folds, coordinates and dates pick out the cruise a
 # sample came from, which is also why adding the study ID changes nothing there: the model can already
 # tell. Grouping the 17 raw methods into three families loses nothing.
+
+# %% [markdown]
+# ### 5.1 Do environmental covariates transfer to new studies?
+#
+# Latitude, longitude and date pick out the cruise on random folds but fall below zero on new studies.
+# Raw coordinates say where a sample was taken, not why that place has plastic. This section tests
+# covariates that describe the place instead. If they carry signal that transfers between studies, adding
+# them should raise the grouped score. Each covariate is computed from the sample's location and month
+# only, never from the target or the study:
+#
+# - Distance to the nearest coast, from the Natural Earth 10 m coastline with points added every 2 km.
+# - Distance to the nearest large river mouth. The river outlets come from Meijer et al. (2021), who
+#   model the floating plastic each of 31,819 outlets emits in tonnes per year. "Large" means the 1,000
+#   outlets with the highest emission, the number in the paper's title.
+# - River plastic input, the summed modelled emission of all outlets within 200 km.
+# - Population within 200 km, summed over the Natural Earth populated places. These are present-day
+#   populations, so the feature describes the place, not the year.
+# - Sea surface temperature for the sample's calendar month, from the NOAA OISST 1991-2020 climatology.
+# - Mean near-surface current speed from the Global Drifter Program climatology, averaged to 1°. Samples
+#   in cells without drifter data take the nearest cell that has it.
+#
+# Distances are great-circle distances from a haversine ball tree, so they are correct across the
+# antimeridian. The 200 km radii and the 1,000-outlet cut were fixed before any model was run. The files
+# are in `data/environment` and `fetch_environment.py` downloads them. `README.md` lists the sources.
+
+# %%
+ENV_DATA = Path("data/environment")
+EARTH_KM = 6371.0
+
+
+def great_circle_tree(points: pd.DataFrame) -> BallTree:
+    return BallTree(np.radians(points[["lat", "lon"]].to_numpy()), metric="haversine")
+
+
+def coast_points(step_km: float = 2.0) -> pd.DataFrame:
+    """Natural Earth coastline vertices, with points added along each segment so no gap exceeds step_km.
+    The distance to the nearest point is then within step_km / 2 of the distance to the line."""
+    points = []
+    for shape in shapefile.Reader(ENV_DATA / "ne_10m_coastline.zip").shapes():
+        for line in np.split(np.array(shape.points), shape.parts[1:]):
+            lon, lat = np.radians(line).T
+            gap = 2 * EARTH_KM * np.arcsin(np.sqrt(
+                np.sin(np.diff(lat) / 2) ** 2 + np.cos(lat[:-1]) * np.cos(lat[1:]) * np.sin(np.diff(lon) / 2) ** 2
+            ))
+            steps = np.maximum(np.ceil(gap / step_km), 1).astype(int)
+            segment = np.repeat(np.arange(len(gap)), steps)
+            fraction = (np.arange(steps.sum()) - np.repeat(np.cumsum(steps) - steps, steps)) / np.repeat(steps, steps)
+            points += [line[segment] + (line[segment + 1] - line[segment]) * fraction[:, None], line[-1:]]
+    return pd.DataFrame(np.concatenate(points), columns=["lon", "lat"])
+
+
+def shapefile_points(path: Path) -> pd.DataFrame:
+    reader = shapefile.Reader(path)
+    return pd.DataFrame([
+        record.as_dict() | {"lon": shape.points[0][0], "lat": shape.points[0][1]}
+        for record, shape in zip(reader.records(), reader.shapes())
+    ])
+
+
+def nearest_km(points: pd.DataFrame, at: pd.DataFrame) -> np.ndarray:
+    return great_circle_tree(points).query(np.radians(at[["lat", "lon"]].to_numpy()))[0][:, 0] * EARTH_KM
+
+
+def sum_within(points: pd.DataFrame, weight: str, at: pd.DataFrame, radius_km: float) -> np.ndarray:
+    within = great_circle_tree(points).query_radius(np.radians(at[["lat", "lon"]].to_numpy()), radius_km / EARTH_KM)
+    values = points[weight].to_numpy()
+    return np.array([values[i].sum() for i in within])
+
+
+coast = coast_points()
+outlets = shapefile_points(ENV_DATA / "Meijer2021_midpoint_emissions.zip").rename(columns={"dots_exten": "tonnes"})
+large_outlets = outlets.nlargest(1000, "tonnes")
+places = shapefile_points(ENV_DATA / "ne_10m_populated_places_simple.zip")
+currents = pd.read_csv(ENV_DATA / "drifter_currents_1deg.csv").assign(speed=lambda c: np.hypot(c.u, c.v))
+with h5py.File(ENV_DATA / "sst.ltm.1991-2020.nc") as f:
+    sst = f["sst"][:]  # month, latitude from 89.5 down to -89.5, longitude from 0.5 to 359.5
+
+
+def environment(frame: pd.DataFrame) -> pd.DataFrame:
+    """Environmental covariates for each row of frame, from its lat, lon and date."""
+    current_cell = great_circle_tree(currents).query(np.radians(frame[["lat", "lon"]].to_numpy()))[1][:, 0]
+    return pd.DataFrame({
+        "coast_km": nearest_km(coast, frame),
+        "river_mouth_km": nearest_km(large_outlets, frame),
+        "river_input_200km": sum_within(outlets, "tonnes", frame, 200),
+        "population_200km": sum_within(places, "pop_max", frame, 200),
+        "sst_climatology": sst[
+            frame.date.dt.month - 1,
+            np.clip(np.floor(90 - frame.lat), 0, 179).astype(int),
+            np.floor(frame.lon % 360).astype(int) % 360,
+        ],
+        "current_speed": currents.speed.to_numpy()[current_cell],
+    }, index=frame.index)
+
+
+env = environment(df)
+ENV = list(env.columns)
+df = df.join(env)
+print(f"{len(coast):,} coastline points, {len(outlets):,} river outlets ({large_outlets.tonnes.sum() / outlets.tonnes.sum():.0%} "
+      f"of modelled emission in the largest 1,000), {len(places):,} populated places, {len(currents):,} current cells")
+
+# %% [markdown]
+# Sanity checks on known points. Point Nemo, the ocean point farthest from land, is about 2,688 km from
+# the nearest coast. A sample in Honolulu harbour should be close to zero. The Fiji points sit on either
+# side of the antimeridian and should both be near the coast. The last two rows are the water samples
+# farthest from and closest to the coast.
+
+# %%
+known = pd.DataFrame({
+    "lat": [-48.877, 21.307, -16.75, -16.75],
+    "lon": [-123.393, -157.867, 179.99, -179.99],
+    "date": pd.Timestamp("2015-01-15"),
+}, index=["Point Nemo", "Honolulu harbour", "Fiji, 179.99° E", "Fiji, 179.99° W"])
+extremes = df.loc[[df.coast_km.idxmax(), df.coast_km.idxmin()], ["lat", "lon", "date"]].set_axis(["farthest sample", "closest sample"])
+checks = pd.concat([known, extremes])
+display(checks.join(environment(checks)))
+df[ENV].describe(percentiles=[0.1, 0.5, 0.9]).T
+
+# %% [markdown]
+# Each feature set is scored with CatBoost and LightGBM, using the settings from section 4. CatBoost also
+# gets the raw method name whenever the sampling family is in the set, as in section 5, so its rows for
+# current features, protocol only and location and time only repeat section 5. Protocol here means mesh,
+# depth and sampling family. Fold mean R² is the per-fold mean from section 4.
+
+# %%
+PROTOCOL_FAMILY = ["log_mesh", "log_depth", "method_family"]
+FEATURE_SETS = {
+    "current features": FEATURES,
+    "current + environmental": FEATURES + ENV,
+    "protocol only": PROTOCOL_FAMILY,
+    "protocol + environmental": PROTOCOL_FAMILY + ENV,
+    "location and time only": LOCATION_TIME,
+    "environmental only": ENV,
+}
+
+
+def env_models(features: list[str]) -> dict[str, Model]:
+    catboost_features = features + ["method"] if "method_family" in features else features
+    return {
+        "CatBoost": lambda train: fit_catboost(train, catboost_features),
+        "LightGBM": sklearn_model(LGBMRegressor(**BOOSTER_DEFAULTS, verbose=-1), features),
+    }
+
+
+def grouped_scores(pred: pd.Series, folds: Folds) -> dict[str, float]:
+    return {
+        "pooled R2": score(pred)["R2"],
+        "fold mean R2": np.mean([score(pred.iloc[test])["R2"] for _, test in folds]),
+        "within 1 log": score(pred)["within 1 log"],
+    }
+
+
+def compare(sets: list[str], folds: Folds) -> pd.DataFrame:
+    return pd.DataFrame({
+        (model, name): grouped_scores(out_of_fold(fit, folds), folds)
+        for name in sets
+        for model, fit in env_models(FEATURE_SETS[name]).items()
+    }).T
+
+
+compare(list(FEATURE_SETS), SPLITS["grouped"])
+
+# %% [markdown]
+# The same feature sets on the chronological holdout, split by seen and unseen studies as in section 4.
+
+# %%
+pd.DataFrame({
+    (model, name): {
+        (group, metric): score(pred.where(mask))[metric]
+        for group, mask in [("all", df.year >= CUTOFF), ("seen study", seen_study), ("unseen study", ~seen_study)]
+        for metric in ("R2", "within 1 log")
+    }
+    for name, features in FEATURE_SETS.items()
+    for model, fit in env_models(features).items()
+    for pred in [out_of_fold(fit, SPLITS["chrono"])]
+}).T
+
+# %% [markdown]
+# Surface nets only. All three sampling families differ by orders of magnitude, so on the full data any
+# spatial signal has to compete with the method effect. Restricting to surface nets and regrouping their
+# studies into five folds isolates how well location and environment predict between net studies.
+
+# %%
+nets = np.flatnonzero(df.method_family == "surface net")
+NET_FOLDS = [(nets[train], nets[test]) for train, test in GroupKFold(5).split(nets, groups=df.study.iloc[nets])]
+print(f"{len(nets):,} surface net samples from {df.study.iloc[nets].nunique()} studies")
+compare(["location and time only", "environmental only", "current features", "current + environmental"], NET_FOLDS)
+
+# %% [markdown]
+# Section 4 showed that the grouped score depends on which studies land in which fold. To see whether the
+# difference between current and current + environmental is larger than that, the comparison is repeated
+# over 10 random assignments of studies to five folds. Both feature sets get the same folds in each
+# repeat, so the gain is a paired difference.
+
+# %%
+REPEATS = 10
+repeated = pd.DataFrame([
+    {"repeat": r, "model": model, "features": name, "pooled R2": score(out_of_fold(fit, folds))["R2"]}
+    for r in range(REPEATS)
+    for folds in [list(GroupKFold(5, shuffle=True, random_state=r).split(df, groups=df.study))]
+    for name in ["current features", "current + environmental"]
+    for model, fit in env_models(FEATURE_SETS[name]).items()
+]).pivot(index=["model", "repeat"], columns="features", values="pooled R2")
+gain = repeated["current + environmental"] - repeated["current features"]
+summary = pd.concat({
+    "current features": repeated["current features"].groupby("model").agg(["mean", "min", "max"]),
+    "current + environmental": repeated["current + environmental"].groupby("model").agg(["mean", "min", "max"]),
+    "gain": gain.groupby("model").agg(["mean", "min", "max"]),
+}, axis=1)
+summary["environmental wins"] = (gain > 0).groupby("model").sum().astype(str) + f" of {REPEATS}"
+summary
+
+# %% [markdown]
+# On the original folds the environmental covariates look like a small win. Adding them raises pooled
+# grouped R² from 0.44 to 0.48 for CatBoost and from 0.47 to 0.51 for LightGBM, and lifts the fold means
+# a little, though both stay below zero. The repeated folds show that this gain is fold-assignment noise.
+# Over 10 random assignments of studies, CatBoost averages 0.48 without them and 0.46 with them, and
+# wins in 3 of 10 repeats. LightGBM averages 0.45 and 0.45 and wins in 5 of 10. The paired gain ranges
+# from -0.07 to +0.02 for CatBoost and from -0.11 to +0.05 for LightGBM, while the baseline alone moves
+# between 0.38 and 0.55 depending on the folds. The difference is smaller than the noise and not
+# consistently positive.
+#
+# The other tests point the same way:
+#
+# - Environmental features alone score -0.97 and -1.06 on new studies, worse than latitude, longitude and
+#   date alone (-0.14 and -0.10). Six continuous descriptors of a place identify it about as precisely
+#   as its coordinates do, so the trees use them to recognise a study's region, and that fails on a new
+#   study.
+# - Within surface nets, location and time transfer a little (0.14 and 0.12) and environment alone does
+#   not (-0.38 and -0.34). Adding environment to the current features changes CatBoost from 0.35 to 0.36
+#   and LightGBM from 0.25 to 0.34. That is one fold assignment, and the full-data repeats show swings of
+#   this size from fold assignment alone.
+# - On the chronological holdout, adding environment to the current features changes R² on unseen
+#   studies from -0.14 to -0.13 for CatBoost and from -0.06 to 0.01 for LightGBM, while the share within
+#   one order of magnitude falls by 2 to 5 points. Protocol plus environment does much better than protocol
+#   only on unseen studies (-0.03 against -0.36 for CatBoost), but it lands at about the level of the
+#   current features, so here environment replaces location and time rather than adding to them.
+# - LightGBM with protocol features only scores 0.50 on the original folds, above its 0.47 with all
+#   current features. Location and time cost LightGBM accuracy on new studies, which fits the same
+#   picture.
+#
+# So these covariates do not transfer to unseen studies any better than raw coordinates, and any gain
+# is within fold-assignment noise. This is a result about these covariates in this form: static
+# population, modelled river emission, 1° climatologies and a 200 km radius chosen in advance. With 72
+# studies, mostly one protocol in one region each, the data has little room to separate the effect of a
+# place from the effect of the study that sampled it.
 
 # %% [markdown]
 # ## 6. Genetic algorithm hyperparameter search
@@ -875,12 +1127,17 @@ plt.show()
 # 1. **Random-split scores overstate how well the models handle new studies.** Tree ensembles reach
 #    R² 0.75 to 0.77 on random folds. With whole studies held out, the best models (LightGBM, the hurdle
 #    model and CatBoost) reach a pooled R² of 0.44 to 0.47, no model has a fold mean above zero, and on the
-#    2015-onwards holdout every model is between -1.7 and 0.26. Study identity alone explains 63% of the
+#    2015-onwards holdout every model is between -1.7 and 0.26. The grouped score itself depends on the
+#    fold assignment: over 10 random assignments CatBoost and LightGBM move between 0.38 and 0.55
+#    (section 5.1). Study identity alone explains 63% of the
 #    target variance (ICC), and on random folds the study label adds nothing to location and date,
 #    because those already identify the cruise.
 # 2. **What transfers is mostly the sampling protocol.** Protocol features alone reach a grouped R² of
 #    0.40, and adding location and time lifts it to 0.44. Location and time alone fall below zero on new
 #    studies. About two thirds of tree predictions on new studies are within one order of magnitude.
+#    Distance to coast and river mouths, river plastic input, population, sea surface temperature and
+#    current speed do not change this. Over 10 random fold assignments their gain averages below zero and
+#    stays between -0.11 and +0.05 (section 5.1).
 # 3. **The ranking of models depends on the split.** On random folds the trees are level and the GAMM is
 #    close behind. On new studies LightGBM, the hurdle model, CatBoost, random forest and linear regression
 #    are close together, while the GAMM and spatial kNN fall below the global mean. Linear regression fails
@@ -910,14 +1167,13 @@ plt.show()
 # - The GAMM is fitted with R's `mgcv` (`gamm.R`): a spherical spline over latitude and longitude, a
 #   smooth of year, linear protocol terms and a random effect per study.
 # - Added beyond the synopsis: a study-mean reference, a spatial kNN baseline, LightGBM, an XGBoost hurdle
-#   model for the zeros, a random-search control for the GA, feature-group ablations, and a seen/unseen
-#   breakdown of the chronological holdout.
+#   model for the zeros, a random-search control for the GA, feature-group ablations, a seen/unseen
+#   breakdown of the chronological holdout, and a test of environmental covariates (section 5.1).
 #
 # ### Next steps
 #
-# - Add oceanographic covariates (sea surface temperature, surface currents, distance to river mouths and
-#   coasts) by joining on latitude, longitude and date. These are the most plausible source of signal that
-#   transfers between studies.
+# - The static environmental covariates in section 5.1 did not transfer. Fields that vary by year, such as
+#   sea surface temperature and wind at the sampling date, are untested.
 # - Use sampled water volume or tow length if they can be recovered from the source papers. Zeros from a
 #   short tow and zeros from a long one mean different things.
 # - Model the sediment (pieces/kg) and beach records separately, as the synopsis planned.
