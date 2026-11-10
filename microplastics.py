@@ -787,12 +787,16 @@ compare(["location and time only", "environmental only", "current features", "cu
 
 # %%
 REPEATS = 10
-repeated = pd.DataFrame([
-    {"repeat": r, "model": model, "features": name, "pooled R2": score(out_of_fold(fit, folds))["R2"]}
+REPEAT_FOLDS = [list(GroupKFold(5, shuffle=True, random_state=r).split(df, groups=df.study)) for r in range(REPEATS)]
+repeat_predictions = {
+    (r, model, name): out_of_fold(fit, REPEAT_FOLDS[r])
     for r in range(REPEATS)
-    for folds in [list(GroupKFold(5, shuffle=True, random_state=r).split(df, groups=df.study))]
     for name in ["current features", "current + environmental"]
     for model, fit in env_models(FEATURE_SETS[name]).items()
+}
+repeated = pd.DataFrame([
+    {"repeat": r, "model": model, "features": name, "pooled R2": score(pred)["R2"]}
+    for (r, model, name), pred in repeat_predictions.items()
 ]).pivot(index=["model", "repeat"], columns="features", values="pooled R2")
 gain = repeated["current + environmental"] - repeated["current features"]
 summary = pd.concat({
@@ -837,6 +841,146 @@ summary
 # population, modelled river emission, 1° climatologies and a 200 km radius chosen in advance. With 72
 # studies, mostly one protocol in one region each, the data has little room to separate the effect of a
 # place from the effect of the study that sampled it.
+
+# %% [markdown]
+# ### 5.2 Calibrating on a few samples from the new study
+#
+# A new survey could measure a few samples first and use them to correct the model. This section tests
+# that. For each held-out study, k of its samples are revealed. The mean error of the prediction on those
+# k samples is the study's offset, and it is added to the predictions for the rest of the study. The
+# offset is shrunk towards zero by dividing the summed error by k + λ instead of k, with
+# λ = (1 - ICC) / ICC from section 2.2, the usual shrinkage for a random intercept.
+#
+# Each study sets aside up to 20 samples, and at most half of its rows, as the pool the k samples come
+# from. Scores use only the rows outside the pool, so every k is scored on the same rows. The reference
+# is the global training mean calibrated in the same way. It knows nothing about a sample except the k
+# measurements from its study.
+
+# %%
+KS = [0, 1, 3, 5, 10, 20]
+SHRINK = (1 - icc) / icc
+
+
+def calibration_pool(order: pd.Series, size: int = 20) -> pd.Series:
+    """Position of each row in its study's calibration pool, by ascending order. NaN for rows outside it."""
+    position = order.groupby(df.study).rank(method="first") - 1
+    return position.where(position < np.minimum(size, df.groupby("study").y.transform("size") // 2))
+
+
+def calibrated(pred: pd.Series, pool: pd.Series, k: int) -> pd.Series:
+    """Predictions shifted by each study's shrunk mean error on its first k pool samples. Pool rows are NaN."""
+    shown = pool < k
+    error = (df.y - pred)[shown].groupby(df.study[shown])
+    return (pred + df.study.map(error.sum() / (error.size() + SHRINK)).fillna(0)).where(pool.isna())
+
+
+def calibration_scores(pred: pd.Series, pools: list[pd.Series], metric: str) -> dict[int, float]:
+    return {k: np.mean([score(calibrated(pred, pool, k))[metric] for pool in pools]) for k in KS}
+
+
+rng = np.random.default_rng(SEED)
+POOLS = {
+    "random samples": [calibration_pool(pd.Series(rng.random(len(df)), index=df.index)) for _ in range(20)],
+    "first samples by date": [calibration_pool(df.date.rank(method="first"))],
+}
+CALIBRATED = {"Global mean": "Study mean only", "CatBoost": "CatBoost", "LightGBM": "LightGBM"}
+pd.DataFrame({
+    (draw, metric, label): calibration_scores(predictions[name, "grouped"], pools, metric)
+    for draw, pools in POOLS.items()
+    for metric in ("R2", "within 1 log")
+    for label, name in CALIBRATED.items()
+}).T.rename_axis(columns="samples shown")
+
+# %% [markdown]
+# The same comparison over the 10 fold assignments from section 5.1, with random samples. The gain is the
+# model's pooled R² minus that of the calibrated global mean on the same folds.
+
+# %%
+calibration_repeats = pd.DataFrame([
+    {"repeat": r, "samples shown": k, "model": model, "R2": r2}
+    for r in range(REPEATS)
+    for model, pred in [
+        ("Global mean", out_of_fold(fit_study_mean, REPEAT_FOLDS[r])),
+        ("CatBoost", repeat_predictions[r, "CatBoost", "current features"]),
+        ("LightGBM", repeat_predictions[r, "LightGBM", "current features"]),
+    ]
+    for k, r2 in calibration_scores(pred, POOLS["random samples"][:5], "R2").items()
+]).pivot(index=["samples shown", "repeat"], columns="model", values="R2")
+calibration_gain = calibration_repeats[["CatBoost", "LightGBM"]].sub(calibration_repeats["Global mean"], axis=0)
+pd.concat({
+    "mean R2": calibration_repeats.groupby("samples shown").mean(),
+    "mean gain over global mean": calibration_gain.groupby("samples shown").mean(),
+    f"wins of {REPEATS}": (calibration_gain > 0).groupby("samples shown").sum(),
+}, axis=1)
+
+# %% [markdown]
+# Calibration raises the score, but the model is not what raises it. With no samples shown the models are
+# far ahead of the global mean, 0.48 and 0.45 against -0.31 over the 10 fold assignments. With one sample
+# they are still ahead, CatBoost in 10 of 10 assignments and LightGBM in 9. From three samples on, the
+# calibrated global mean beats both models in all 10 assignments. With five samples it reaches 0.61,
+# against 0.60 for CatBoost and 0.55 for LightGBM, and the gap stays at 0.02 to 0.04 for CatBoost and 0.06
+# to 0.08 for LightGBM up to 20 samples.
+#
+# Taking the first samples by date instead of random ones is closer to what a survey would do, and it is
+# harder, because early samples sit close together. On the original folds the calibrated global mean then
+# scores 0.53 to 0.61 from one sample on, CatBoost 0.45 to 0.50 and LightGBM 0.26 to 0.37.
+#
+# So the features tell the model roughly what level a new study will report, and nothing beyond that. A
+# few of the study's own measurements give the level more accurately, and the model's sample-by-sample
+# predictions then add error.
+
+# %% [markdown]
+# ### 5.3 Ranking samples inside a study
+#
+# Calibration fixes a study's level. What is left is the order of its samples: can the model tell which
+# samples of an unseen study are higher than the others? For every study with at least 20 samples, the
+# Spearman rank correlation between prediction and truth is computed inside the study, using the grouped
+# out-of-fold predictions from section 4. The last column is the pooled R² when each study's predictions
+# are shifted to its true mean. The true study mean alone, with no model, scores the value printed below.
+
+# %%
+study_mean = df.groupby("study").y.transform("mean")
+rankable = df.groupby("study").y.transform(lambda y: len(y) >= 20 and y.nunique() > 1).astype(bool)
+
+
+def within_study(pred: pd.Series) -> dict[str, float]:
+    rho = pd.DataFrame({"pred": pred, "y": df.y})[rankable].groupby(df.study).apply(
+        lambda g: g.pred.corr(g.y, method="spearman") if g.pred.nunique() > 1 else np.nan
+    ).dropna()
+    centred = pred - pred.groupby(df.study).transform("mean") + study_mean
+    return {
+        "median rho": rho.median(),
+        "share of studies with rho > 0": (rho > 0).mean(),
+        "share with rho > 0.3": (rho > 0.3).mean(),
+        "R2 with true study mean": score(centred)["R2"],
+    }
+
+
+print(f"{df[rankable].study.nunique()} studies with at least 20 samples. "
+      f"True study mean alone: R2 {score(study_mean)['R2']:.3f}")
+pd.DataFrame({name: within_study(predictions[name, "grouped"]) for name in MODELS if name != "Study mean only"}).T
+
+# %% [markdown]
+# CatBoost and LightGBM over the 10 fold assignments, with and without the environmental covariates.
+
+# %%
+pd.DataFrame([
+    {"model": model, "features": name} | within_study(pred) for (_, model, name), pred in repeat_predictions.items()
+]).groupby(["model", "features"]).agg(["mean", "min", "max"])[["median rho", "R2 with true study mean"]]
+
+# %% [markdown]
+# No model ranks the samples of an unseen study. The median rank correlation is between 0.01 and 0.10 for
+# every model on the original folds, and between 0.02 and 0.05 on average over the 10 fold assignments
+# for CatBoost and LightGBM. The environmental covariates do not change it. In 55 to 67% of studies the
+# correlation is above zero, close to a coin toss, and in 10 to 29% it is above 0.3.
+#
+# The last column says the same thing as section 5.2. The true study mean alone scores 0.67. Every model
+# shifted to that mean scores lower, between 0.35 for spatial kNN and 0.64 for CatBoost. What the models
+# predict inside a study is worse than predicting no variation at all.
+#
+# Sections 5 to 5.3 together locate the models' skill on new studies. It is an estimate of the study's
+# level, taken mostly from the sampling protocol. Variation inside a study, which is where location,
+# season and environment would have to show up, is not predicted.
 
 # %% [markdown]
 # ## 6. Genetic algorithm hyperparameter search
@@ -1137,7 +1281,9 @@ plt.show()
 #    studies. About two thirds of tree predictions on new studies are within one order of magnitude.
 #    Distance to coast and river mouths, river plastic input, population, sea surface temperature and
 #    current speed do not change this. Over 10 random fold assignments their gain averages below zero and
-#    stays between -0.11 and +0.05 (section 5.1).
+#    stays between -0.11 and +0.05 (section 5.1). Inside an unseen study the models do not rank samples:
+#    the median rank correlation is 0.01 to 0.10 (section 5.3). Once three samples from a new study are
+#    known, their shrunk mean alone beats the calibrated models in all 10 fold assignments (section 5.2).
 # 3. **The ranking of models depends on the split.** On random folds the trees are level and the GAMM is
 #    close behind. On new studies LightGBM, the hurdle model, CatBoost, random forest and linear regression
 #    are close together, while the GAMM and spatial kNN fall below the global mean. Linear regression fails
@@ -1168,7 +1314,8 @@ plt.show()
 #   smooth of year, linear protocol terms and a random effect per study.
 # - Added beyond the synopsis: a study-mean reference, a spatial kNN baseline, LightGBM, an XGBoost hurdle
 #   model for the zeros, a random-search control for the GA, feature-group ablations, a seen/unseen
-#   breakdown of the chronological holdout, and a test of environmental covariates (section 5.1).
+#   breakdown of the chronological holdout, a test of environmental covariates (section 5.1), calibration
+#   on a few samples from the new study (section 5.2) and ranking inside a study (section 5.3).
 #
 # ### Next steps
 #
