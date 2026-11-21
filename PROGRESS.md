@@ -1,18 +1,18 @@
 # Progress
 
-Updated 2026-10-28.
+Updated 2026-11-21.
 
-## Pending decisions
+## Current status
 
-Arnab asked whether different training could improve predictions. Discussed comparable-net subsets, environmental predictors, measurement harmonisation, concentration categories and stricter error tolerances. No next experiment was selected.
+Option A (steps 1 through 6) is complete in the repo, and v2 methodological fixes are committed on branch `feat/constrained-within-between`:
+- Literature audit and paywalled-paper need ratings: `docs/literature-review.md`
+- Reproducible Option A experiments (steps 2 to 5) and figures: `experiments.py`, `artifacts/step*.csv`, `artifacts/fig_step*.png`
+- V2 constrained Within-Between physics, Lagrangian drifter accumulation, and left-censored Tobit experiments: `experiments_v2.py`, `docs/v2-methods-results.md`, `artifacts/v2_*.csv`, `artifacts/fig_v2_*.png`
+- Replication checksums (sections 1 to 17): `docs/replication.md`
+- Research-paper-style B.Tech project report draft (updated with v2 fixes): `docs/report-draft.md`
 
-Explain results in plain language with numbers. Arnab wants an understandable performance percentage, but has not requested changing the regression task to classification.
+## Open items
 
-## Data questions
-
-- `data/noaa_microplastics.csv` came from Gourab's NCEI download. Its download date is unknown and is needed to cite it.
-- The bongo net rows (Arteaga et al. 2024) have a median of 2,860 pieces/m3, far above other nets. The abstract mixes units and the full text is paywalled, so they are unverified and left unchanged.
-
-## Unresolved review notes
-
-- The earlier chat recommendation to harmonise measurements using "Koelmans 2020" was unverified. Check the citation and required metadata before pursuing it.
+- **NCEI download date.** Get Gourab's download date for `data/noaa_microplastics.csv` and replace `[DOWNLOAD DATE PENDING]` in `docs/report-draft.md`.
+- **Partner alignment.** Confirm Option A framing and report text with Gourab before final submission formatting (LaTeX/Word template).
+- **Environment note.** `.venv` has the locked offline packages (`lightgbm`, `scikit-learn`, `statsmodels`, `matplotlib`). Full `uv sync` stalls on the 291 MiB `nvidia-nccl-cu13` wheel pulled by `xgboost`; use `xgboost-cpu` or `.venv/bin/python` for CPU runs.
