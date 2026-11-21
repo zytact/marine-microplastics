@@ -1,31 +1,28 @@
 # Progress
 
-Updated 2026-11-10.
+Updated 2026-11-21.
 
-## State
+## Where things live
 
-Branch `feat/environmental-features` adds sections 5.1 to 5.3 and is not merged into `main`. Arnab has not asked for a merge or a push.
+- Notebook sections 5.1 to 5.3 (`microplastics.py`): environmental covariates, few-sample calibration, within-study ranking.
+- Option A experiments: `experiments.py`. V2 constrained within-between, drifter accumulation and Tobit experiments: `experiments_v2.py`, `docs/v2-methods-results.md`.
+- Literature audit: `docs/literature-review.md`. Replication checksums: `docs/replication.md`. Report draft: `docs/report-draft.md`.
 
 ## Settled
 
-Environmental covariates stay out of the main models. Section 5.1 tested coast distance, river mouth distance, river plastic input, population, SST climatology and current speed. Over 10 random study fold assignments the grouped R2 gain averaged -0.024 for CatBoost and -0.005 for LightGBM.
+Environmental covariates stay out of the main models. Over 10 random study fold assignments their grouped R2 gain averaged -0.024 for CatBoost and -0.005 for LightGBM.
 
-The grouped pooled R2 in section 4 is one fold assignment. Across the 10 assignments it ranges from 0.38 to 0.55, so quote that range beside the 0.44 and 0.47.
+The grouped pooled R2 in notebook section 4 is one fold assignment. Across 10 assignments it ranges from 0.38 to 0.55, so quote that range beside the 0.44 and 0.47.
 
-Few-sample calibration and within-study ranking are tested in sections 5.2 and 5.3. From 3 revealed samples on, the shrunk mean of a new study's own samples beats calibrated CatBoost and LightGBM in 10 of 10 fold assignments. Median within-study rank correlation on unseen studies is 0.01 to 0.10. A model trained on deviations from the training study mean ranked no better and is not in the notebook.
+Gourab's separate notebooks (not in the repo) reach about 0.8 R2 with a random 80:20 split, a `log1p` target and beach rows. His study-grouped scores are -0.16 to -0.39. On our grouped folds, XGBoost scores 0.33 with our setup, 0.12 with `log1p` and -3.65 with `log1p` and no `UNIT_FIXES`. His data lacks the unit fix.
 
-## Pending decisions
+Publication framing given to Arnab: a validation study (study-grouped testing, inflated random-split scores, sampling method as the transferable signal, the NCEI unit errors, the 3-sample calibration result). NCEI has not confirmed the unit errors.
 
-Arnab wants results explained in plain language with numbers. He asked for an accuracy-style percentage but has not asked to change the regression task to classification.
+Arnab wants results explained in plain language with numbers.
 
-Untested ideas for better predictions: cross-calibrating studies that overlap in space and season, a monotonic constraint on mesh size, fields that vary by year such as SST and wind at the sampling date, comparable-net subsets as the main model, measurement harmonisation, concentration categories.
+## Open items
 
-## Data questions
-
-- `data/noaa_microplastics.csv` came from Gourab's NCEI download. Its download date is unknown and is needed to cite it.
-- The bongo net rows (Arteaga et al. 2024) have a median of 2,860 pieces/m3, far above other nets. The abstract mixes units and the full text is paywalled, so they are unverified and left unchanged.
+- Get Gourab's NCEI download date for `data/noaa_microplastics.csv` and replace `[DOWNLOAD DATE PENDING]` in `docs/report-draft.md`.
+- Confirm the Option A framing and report text with Gourab before final submission formatting.
 - Gourab needs R with `mgcv` installed to run the notebook.
-
-## Unresolved review notes
-
-- The earlier chat recommendation to harmonise measurements using "Koelmans 2020" was unverified. Check the citation and required metadata before pursuing it.
+- Full `uv sync` stalls on the 291 MiB `nvidia-nccl-cu13` wheel pulled by `xgboost`. Use `xgboost-cpu` or the existing `.venv/bin/python` for CPU runs.
