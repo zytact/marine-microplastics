@@ -258,49 +258,38 @@ mesh 0.333 mm, depth 0. The 12 monthly predictions are averaged on the log scale
 from any surface-net observation (BallTree haversine) are blanked.
 
 
-## 14. Sensitivity checks (`experiments.py`, Step 2)
+## 14. Paper experiments (`core.py`, `experiments.py`, `experiments_v2.py`)
 
-Run with `.venv/bin/python experiments.py`. Checksums use the same 16,988-row ocean-water table and `SEED = 0`. Output saved to `artifacts/step2_sensitivity.csv`.
+The paper's tables come from two scripts that share `core.py`, so both load the same data, build the same
+features (no scaling for trees) and score the same baseline. `core.py` merges the three names NCEI uses for
+Galway-Mayo Institute of Technology and the two it uses for Italy's National Research Council, which gives 49
+organizations instead of 52. Every study-grouped and organization-grouped score is a mean over
+10 random fold assignments (`GroupKFold(5, shuffle=True, random_state=0..9)`).
 
-| Subset | Rows | Studies | ICC | LGBM Random R² | LGBM Grouped R² | LGBM Protocol-only R² | LGBM Loc+Time-only R² |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Full dataset | 16,988 | 72 | 0.631 | 0.764 | 0.473 | 0.497 | -0.097 |
-| Drop bongo net (Arteaga 2024) | 16,955 | 71 | 0.612 | 0.759 | 0.556 | 0.537 | -0.026 |
-| Drop Barrows & Dehm (unit-fixed) | 15,518 | 70 | 0.739 | 0.771 | 0.339 | 0.255 | 0.011 |
-| Drop Barrows, Dehm & bongo | 15,485 | 69 | 0.720 | 0.766 | 0.462 | 0.429 | 0.117 |
+```sh
+.venv/bin/python experiments_v2.py   # about 6 minutes on 12 cores
+.venv/bin/python experiments.py      # about 12 minutes, needs catboost, xgboost, h5py and pyshp
+.venv/bin/python paper/figures.py    # PDFs into paper/figures
+cd paper && tectonic -X compile main.tex
+```
 
-## 15. Leave-one-ocean-out comparison (`experiments.py`, Step 3)
+The `.venv` here has `catboost`, `xgboost-cpu`, `h5py` and `pyshp` installed with `uv pip install`, because `uv sync` stalls on
+the CUDA wheel that `xgboost` pulls in.
 
-Strict study exclusion drops any training row whose study also sampled the held-out ocean basin. Output saved to `artifacts/step3_leave_one_ocean_out.csv` and `artifacts/fig_step3_looo_comparison.png`.
+Checksums: 16,988 rows, 72 studies, 49 organizations, years 1972 to 2024, study-constant oracle R² 0.666
+(study mean) and MAE 0.708 (study median).
 
-| Held-out ocean | Rows (studies) | Dalvi 2026 R² | LGBM Loc+Time R² | LGBM Protocol-only R² | LGBM All features R² |
-|---|---:|---:|---:|---:|---:|
-| Indian Ocean | 528 (16) | 0.166 | -0.635 | 0.100 | 0.202 |
-| Pacific Ocean | 5,377 (27) | 0.082 | 0.126 | 0.519 | 0.515 |
-| Atlantic Ocean | 10,671 (38) | 0.010 | -0.026 | 0.547 | 0.218 |
-| Arctic Ocean | 385 (7) | -0.253 | -0.439 | 0.189 | -0.103 |
-| Southern Ocean | 27 (3) | -0.708 | -0.600 | 0.445 | 0.276 |
-
-## 16. Study-calibrated prediction intervals (`experiments.py`, Step 4)
-
-Evaluated on outer 5-fold `GroupKFold` by study. Inner calibration uses 4-fold `GroupKFold` on training studies (or 5-fold random CV for the naive conformal baseline). Output saved to `artifacts/step4_intervals.csv` and `artifacts/fig_step4_interval_coverage.png`.
-
-| Method | Row coverage | Mean study coverage | Studies >= 80% cov | Median width (log10) |
-|---|---:|---:|---:|---:|
-| Dalvi-style 10-run GBDT spread (±1.645σ, 90%) | 15.6% | 15.0% | 0.0% | 0.52 |
-| Dalvi-style 10-run GBDT spread (±1.96σ, 95%) | 19.1% | 18.7% | 2.8% | 0.62 |
-| Random-CV conformal (row-weighted, 90%) | 71.6% | 62.8% | 36.1% | 2.40 |
-| Study-grouped conformal (row-weighted, 90%) | 91.8% | 90.1% | 86.1% | 5.08 |
-| Study-grouped conformal (study-weighted, 90%) | 95.3% | 94.3% | 91.7% | 5.48 |
-| Study-grouped CQR (row-weighted, 90%) | 90.7% | 91.4% | 88.9% | 3.85 |
-| Study-grouped CQR (study-weighted, 90%) | 92.7% | 93.3% | 91.7% | 3.86 |
-
-## 17. Reliability flags and selective prediction (`experiments.py`, Step 5)
-
-Output saved to `artifacts/step5_flags.csv`, `artifacts/step5_risk_coverage.csv`, and `artifacts/fig_step5_risk_coverage.png`.
-
-- Unseen raw sampling method (14.2% of rows): flagged MAE 1.99, >100x miss rate 35.0%; unflagged MAE 0.83, >100x miss rate 6.7%.
-- Mesh size outside training min/max (10.2% of rows): flagged MAE 1.92, >100x miss rate 32.8%; unflagged MAE 0.89, >100x miss rate 8.2%.
-- Distance > 500 km to any training sample (9.4% of rows): flagged MAE 0.98 vs unflagged 1.00 (no separation).
-- Distance > 500 km to same sampling family (26.1% of rows): flagged MAE 1.27 (>100x miss 18.0%) vs unflagged 0.90 (>100x miss 8.2%).
-- Deferring the top 20% widest CQR intervals (retaining 80% of rows) reduces MAE from 0.996 to 0.774, raises within-10x accuracy from 63.9% to 70.9%, and cuts >100x misses from 10.7% to 4.7%.
+| Output | Paper | Value to match |
+|---|---|---|
+| `artifacts/audit_baselines.csv` | Table I | LightGBM random R² 0.763, grouped R² 0.456 |
+| `artifacts/audit_sensitivity.csv` | Table II | Full data protocol-only 0.428, location and time only -0.022 |
+| `artifacts/audit_intervals.csv` | Table VI | Study CQR (study) coverage 90.9%, median width 3.85 |
+| `artifacts/audit_flags.csv`, `audit_risk_coverage.csv` | Table VII, Fig. 5 | Unseen method flagged MAE 2.34 |
+| `artifacts/audit_environment.csv` | Section V-B | LightGBM 0.456 to 0.449 with covariates |
+| `artifacts/audit_calibration.csv`, `audit_ranking.csv` | Section V-B | Global mean after 3 samples 0.556 |
+| `artifacts/v2_diagnosis.csv` | Section IV-F | Baseline MSE 2.073, Barrows share of squared error 37.2% |
+| `artifacts/v2_global_benchmark.csv`, `v2_global_repeats.csv` | Tables III and IV, Fig. 1 | Constrained protocol 0.543, Within-Between Physics 0.552, baseline org-grouped 0.282 |
+| `artifacts/v2_dalvi_scale.csv` | Fig. 2 | Constrained protocol LOOO mean 0.648 on ln(c+1) |
+| `artifacts/v2_surface_nets.csv`, `v2_surface_net_ranking.csv` | Fig. 3a | 58 studies, Within-Between Physics 0.275 |
+| `artifacts/v2_censored.csv` | Table V, Fig. 3b | Two-part Physics NLL 1.519 and positive R² 0.815, Tobit AUC 0.700 |
+| `artifacts/v2_sensitivity.csv` | Table VIII | Without all three, baseline 0.397, Physics 0.300, baseline org-grouped 0.162 |
