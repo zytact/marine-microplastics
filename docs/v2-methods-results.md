@@ -1,7 +1,6 @@
 # V2 methods: constrained Within-Between physics and left-censored modeling
 
-Branch: `feat/constrained-within-between`
-Reproducible script: `experiments_v2.py`
+Reproducible script: `experiments_v2.py` (merged into `main` from `feat/constrained-within-between`)
 Artifacts: `artifacts/v2_*.csv`, `artifacts/fig_v2_*.png`
 
 ## Why baseline LightGBM left error on the table
@@ -31,6 +30,8 @@ Auditing the Option A out-of-fold predictions (`artifacts/step4_oof_predictions.
 | Within-Between Physics (Protocol + Lagrangian) | **0.572** | **0.552 (0.476 to 0.575)** | **10/10** | **0.929** | 65.8% | 7.4% | 0.459 | 0.418 (**+0.194**) |
 | Within-Between Physics + CV Space | **0.572** | 0.550 (0.467 to 0.570) | 10/10 | 0.931 | 65.9% | 7.6% | 0.436 | 0.418 (**+0.203**) |
 | Oracle within-study median (noise floor) | 0.627 | 0.627 | 10/10 | 0.708 | 81.5% | 5.6% | 0.627 | n/a |
+
+Constrained monotonic Huber protocol trees deliver `+0.087` of the `+0.096` global 10-repeat R² gain (`0.456` to `0.543`). Adding the within-study Lagrangian drifter slope contributes a modest `+0.009` incremental global lift (`0.543` to `0.552`) while improving organization-grouped CV (`0.428` to `0.459`), surface-net-only transfer (`10/10` splits), and strict LOOO (`5/5` oceans above Dalvi & Dalvi 2026, lifting the Indian Ocean from `0.078` to `0.194`).
 
 Strict leave-one-ocean-out R² (`Within-Between Physics` vs Dalvi & Dalvi 2026):
 - Indian Ocean: `0.194` vs `0.166`
