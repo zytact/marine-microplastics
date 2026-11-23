@@ -269,14 +269,14 @@ organizations instead of 52. Every study-grouped and organization-grouped score 
 ```sh
 .venv/bin/python experiments_v2.py   # about 6 minutes on 12 cores
 .venv/bin/python experiments.py      # about 12 minutes, needs catboost, xgboost, h5py and pyshp
-.venv/bin/python external.py        # under a minute, AOMI external test
+.venv/bin/python external.py        # under a minute, external test on data/aomi/, data/pangaea/ and data/zhao2025/ (needs openpyxl)
 .venv/bin/python paper/figures.py    # PDFs into paper/figures
 cd paper && tectonic -X compile main.tex
 ```
 
 Run the scripts one at a time. Each already uses all cores, and running them together oversubscribes the CPU and makes every run several times slower.
 
-The `.venv` here has `catboost`, `xgboost-cpu`, `h5py` and `pyshp` installed with `uv pip install`, because `uv sync` stalls on
+The `.venv` here has `catboost`, `xgboost-cpu`, `h5py`, `pyshp` and `openpyxl` installed with `uv pip install`, because `uv sync` stalls on
 the CUDA wheel that `xgboost` pulls in.
 
 Checksums: 16,988 rows, 72 studies, 49 organizations, years 1972 to 2024, study-constant oracle R² 0.666
@@ -286,15 +286,15 @@ Checksums: 16,988 rows, 72 studies, 49 organizations, years 1972 to 2024, study-
 |---|---|---|
 | `artifacts/audit_baselines.csv` | Table I | LightGBM random R² 0.763, grouped R² 0.456 |
 | `artifacts/audit_sensitivity.csv` | Table II | Full data protocol-only 0.428, location and time only -0.022, as archived all features -0.088 |
-| `artifacts/audit_intervals.csv` | Table VI | Study CQR (study) coverage 90.9%, median width 3.85 |
-| `artifacts/audit_flags.csv`, `audit_risk_coverage.csv` | Table VII, Fig. 5 | Unseen method flagged MAE 2.34 |
-| `artifacts/audit_environment.csv` | Section V-B | LightGBM 0.456 to 0.449 with covariates |
-| `artifacts/audit_calibration.csv`, `audit_ranking.csv` | Section V-B | Global mean after 3 samples 0.556 |
-| `artifacts/v2_diagnosis.csv` | Section IV-F | Baseline MSE 2.073, Barrows share of squared error 37.2% |
-| `artifacts/v2_global_benchmark.csv`, `v2_global_repeats.csv` | Tables III and IV, Fig. 1 | Constrained protocol 0.543, Within-Between Physics 0.552, baseline org-grouped 0.282 |
-| `artifacts/v2_dalvi_scale.csv` | Fig. 2 | Constrained protocol LOOO mean 0.648 on ln(c+1) |
-| `artifacts/v2_surface_nets.csv`, `v2_surface_net_ranking.csv` | Fig. 3a | 58 studies, Within-Between Physics 0.275 |
-| `artifacts/v2_censored.csv` | Table V, Fig. 3b | Two-part Physics NLL 1.519 and positive R² 0.815, Tobit AUC 0.700 |
-| `artifacts/v2_sensitivity.csv` | Table VIII | Without all three, baseline 0.397, Physics 0.300, baseline org-grouped 0.162 |
-| `artifacts/v2_study_bootstrap.csv` | Section V text | Constrained vs. baseline R² gain 0.087, 95% interval -0.047 to 0.198 |
-| `artifacts/external_aomi_scores.csv`, `external_aomi_projects.csv`, `external_aomi_intervals.csv`, `external_aomi_shared_studies.csv` | Table IX | Study-weighted net mean MAE 0.769, baseline 0.872, constrained protocol 1.421, study CQR coverage 94.3% |
+| `artifacts/external_scores.csv`, `external_groups.csv`, `external_intervals.csv`, `external_aomi_overlap.csv`, `external_aomi_shared_studies.csv` | Table III, Section V-D | 3,044 samples in 39 groups. AOMI nets (2,429): family mean per study MAE 0.754, baseline 0.920, constrained 1.441 (1.080 with recorded net depth). Pump and bottle (571): protocol only 0.875, baseline 0.958, family means 1.322 and 1.455; with compilation pumps at 1 m and 10 m, baseline 0.960 and 0.999. Study CQR coverage 93.7% overall |
+| `artifacts/audit_intervals.csv` | Table IV, Fig. 1 | Study CQR (study) coverage 90.9%, median width 3.85 |
+| `artifacts/audit_flags.csv`, `audit_risk_coverage.csv` | Table V, Fig. 2 | Unseen method flagged MAE 2.34 |
+| `artifacts/audit_environment.csv` | Section V-C | LightGBM 0.456 to 0.449 with covariates |
+| `artifacts/audit_calibration.csv`, `audit_ranking.csv` | Section V-C | Global mean after 3 samples 0.556 |
+| `artifacts/v2_diagnosis.csv` | Section IV-G | Baseline MSE 2.073, Barrows share of squared error 37.2% |
+| `artifacts/v2_global_benchmark.csv`, `v2_global_repeats.csv` | Tables VI and VII, Fig. 3 | Constrained protocol 0.543, Within-Between Physics 0.552, baseline org-grouped 0.282 |
+| `artifacts/v2_study_bootstrap.csv` | Section VI-B | Constrained vs. baseline R² gain 0.087, 95% interval -0.047 to 0.198 |
+| `artifacts/v2_dalvi_scale.csv` | Fig. 4 | Constrained protocol LOOO mean 0.648 on ln(c+1) |
+| `artifacts/v2_surface_nets.csv`, `v2_surface_net_ranking.csv` | Fig. 5a | 58 studies, Within-Between Physics 0.275 |
+| `artifacts/v2_censored.csv` | Table VIII, Fig. 5b | Two-part Physics NLL 1.519 and positive R² 0.815, two-part baseline 0.708 |
+| `artifacts/v2_sensitivity.csv` | Table IX | Without all three, baseline 0.397, Physics 0.300, baseline org-grouped 0.162 |
