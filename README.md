@@ -16,6 +16,8 @@ Section 5.1 tests environmental covariates. `fetch_environment.py` downloads the
 | `sst.ltm.1991-2020.nc` (3.4 MB) | NOAA OI SST V2 monthly long-term mean 1991-2020, 1°, from NOAA PSL | https://downloads.psl.noaa.gov/Datasets/noaa.oisst.v2/sst.ltm.1991-2020.nc | None stated. PSL asks for the acknowledgement "data provided by the NOAA PSL, Boulder, Colorado, USA, from their website at https://psl.noaa.gov" |
 | `drifter_currents_1deg.csv` (0.9 MB) | Global Drifter Program annual mean near-surface velocity, v3.10, Laurindo et al. (2017), doi:10.1016/j.dsr.2017.04.009. Derived: averaged from 0.25° to 1° by `fetch_environment.py` | https://erddap.aoml.noaa.gov/gdp/erddap/griddap/drifter_annualmeans | CC BY 4.0 |
 
+The external test in `external.py` uses `data/aomi/Level012R1.csv`, the Level 0 to 2 file of Isobe et al. (2021), Microplastics and Nanoplastics 1:16, doi:10.1186/s43591-021-00013-z, Additional file 3 (https://static-content.springer.com/esm/art%3A10.1186%2Fs43591-021-00013-z/MediaObjects/43591_2021_13_MOESM3_ESM.zip), CC BY 4.0, downloaded on 2026-11-23.
+
 ## Running
 
 The GAMM runs in R through `gamm.R`, so R with the `mgcv` package must be on the path. On Fedora,

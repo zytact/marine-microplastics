@@ -269,9 +269,12 @@ organizations instead of 52. Every study-grouped and organization-grouped score 
 ```sh
 .venv/bin/python experiments_v2.py   # about 6 minutes on 12 cores
 .venv/bin/python experiments.py      # about 12 minutes, needs catboost, xgboost, h5py and pyshp
+.venv/bin/python external.py        # under a minute, AOMI external test
 .venv/bin/python paper/figures.py    # PDFs into paper/figures
 cd paper && tectonic -X compile main.tex
 ```
+
+Run the scripts one at a time. Each already uses all cores, and running them together oversubscribes the CPU and makes every run several times slower.
 
 The `.venv` here has `catboost`, `xgboost-cpu`, `h5py` and `pyshp` installed with `uv pip install`, because `uv sync` stalls on
 the CUDA wheel that `xgboost` pulls in.
@@ -282,7 +285,7 @@ Checksums: 16,988 rows, 72 studies, 49 organizations, years 1972 to 2024, study-
 | Output | Paper | Value to match |
 |---|---|---|
 | `artifacts/audit_baselines.csv` | Table I | LightGBM random R² 0.763, grouped R² 0.456 |
-| `artifacts/audit_sensitivity.csv` | Table II | Full data protocol-only 0.428, location and time only -0.022 |
+| `artifacts/audit_sensitivity.csv` | Table II | Full data protocol-only 0.428, location and time only -0.022, as archived all features -0.088 |
 | `artifacts/audit_intervals.csv` | Table VI | Study CQR (study) coverage 90.9%, median width 3.85 |
 | `artifacts/audit_flags.csv`, `audit_risk_coverage.csv` | Table VII, Fig. 5 | Unseen method flagged MAE 2.34 |
 | `artifacts/audit_environment.csv` | Section V-B | LightGBM 0.456 to 0.449 with covariates |
@@ -293,3 +296,5 @@ Checksums: 16,988 rows, 72 studies, 49 organizations, years 1972 to 2024, study-
 | `artifacts/v2_surface_nets.csv`, `v2_surface_net_ranking.csv` | Fig. 3a | 58 studies, Within-Between Physics 0.275 |
 | `artifacts/v2_censored.csv` | Table V, Fig. 3b | Two-part Physics NLL 1.519 and positive R² 0.815, Tobit AUC 0.700 |
 | `artifacts/v2_sensitivity.csv` | Table VIII | Without all three, baseline 0.397, Physics 0.300, baseline org-grouped 0.162 |
+| `artifacts/v2_study_bootstrap.csv` | Section V text | Constrained vs. baseline R² gain 0.087, 95% interval -0.047 to 0.198 |
+| `artifacts/external_aomi_scores.csv`, `external_aomi_projects.csv`, `external_aomi_intervals.csv`, `external_aomi_shared_studies.csv` | Table IX | Study-weighted net mean MAE 0.769, baseline 0.872, constrained protocol 1.421, study CQR coverage 94.3% |
