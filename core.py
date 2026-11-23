@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from functools import cache
 from pathlib import Path
 
 import numpy as np
@@ -68,6 +69,7 @@ def linked_groups(first: pd.Series, second: pd.Series) -> pd.Series:
     return group
 
 
+@cache
 def lagrangian_accumulation_field() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     drifters = pd.read_csv(DRIFTER_DATA)
     u_grid = np.zeros((180, 360))
@@ -126,6 +128,10 @@ def load_data() -> pd.DataFrame:
     data["date"] = pd.to_datetime(data.date, format="%m/%d/%Y %I:%M:%S %p")
     water = data[(data.medium == "Ocean water") & (data.unit == "pieces/m3")].reset_index(drop=True)
     water["conc"] *= water.doi.map(UNIT_FIXES).fillna(1.0)
+    return with_features(water)
+
+
+def with_features(water: pd.DataFrame) -> pd.DataFrame:
     method = water.method.str.lower().str.replace("-", " ")
     month = water.date.dt.month
 
@@ -148,6 +154,23 @@ def load_data() -> pd.DataFrame:
         drifter_speed=speed[ocean_y[nearest], ocean_x[nearest]],
         abs_lat=np.abs(water.lat),
     )
+
+
+def as_archived(df: pd.DataFrame) -> pd.DataFrame:
+    conc = df.conc / df.doi.map(UNIT_FIXES).fillna(1.0)
+    return df.assign(conc=conc, y=np.log10(conc + OFFSET_C))
+
+
+def sensitivity_subsets(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
+    corrected = df.doi.isin(UNIT_FIXES)
+    bongo = df.method == "bongo net"
+    return {
+        "Full dataset": df,
+        "As archived (no unit fix)": as_archived(df),
+        "Drop bongo net (Arteaga 2024)": df[~bongo],
+        "Drop Barrows & Dehm": df[~corrected],
+        "Drop Barrows, Dehm & bongo": df[~corrected & ~bongo],
+    }
 
 
 def design_matrices(train: pd.DataFrame, test: pd.DataFrame, cols: list[str]) -> tuple[np.ndarray, np.ndarray, list[str]]:

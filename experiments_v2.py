@@ -1,4 +1,5 @@
 from functools import partial
+from typing import NamedTuple
 
 import lightgbm as lgb
 import numpy as np
@@ -14,13 +15,13 @@ from core import (
     ARTIFACTS,
     BARROWS_DOI,
     DALVI_OCEAN_R2,
-    DEHM_DOI,
     FEATURES,
     OCEANS,
     PROTOCOL_FEATURES,
     SEED,
     Folds,
     Predictor,
+    as_archived,
     design_matrices,
     load_data,
     out_of_fold,
@@ -33,6 +34,7 @@ from core import (
     predict_within_between_physics,
     repeated_folds,
     score,
+    sensitivity_subsets,
     shallow_protocol,
     study_constant_oracle,
     transport_offset,
@@ -58,9 +60,12 @@ MODELS: dict[str, Predictor] = {
 }
 
 
+def oof_predictions(df: pd.DataFrame, fold_sets: list[Folds], predict: Predictor) -> list[np.ndarray]:
+    return Parallel(n_jobs=3)(delayed(out_of_fold)(df, folds, predict) for folds in fold_sets)
+
+
 def split_scores(df: pd.DataFrame, fold_sets: list[Folds], predict: Predictor) -> pd.DataFrame:
-    preds = Parallel(n_jobs=3)(delayed(out_of_fold)(df, folds, predict) for folds in fold_sets)
-    return pd.DataFrame([score(df.y.to_numpy(), p, df.study) for p in preds])
+    return pd.DataFrame([score(df.y.to_numpy(), p, df.study) for p in oof_predictions(df, fold_sets, predict)])
 
 
 def wins(a: pd.Series, b: pd.Series) -> int:
@@ -154,9 +159,14 @@ def block1_global_benchmark(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFram
     return summary, repeats
 
 
-def block2_dalvi_scale(df: pd.DataFrame) -> pd.DataFrame:
-    ln = df.assign(y=np.log1p(df.conc))
+def dalvi_row(name: str, frame: pd.DataFrame, predict: Predictor) -> dict[str, float | str]:
+    ln = frame.assign(y=np.log1p(frame.conc))
     random_folds = list(KFold(5, shuffle=True, random_state=SEED).split(ln))
+    random_sc = score(ln.y.to_numpy(), out_of_fold(ln, random_folds, predict), ln.study)
+    return {"model": name, "random_R2": random_sc["R2"], "random_MAE": random_sc["MAE"], **strict_looo(ln, predict)}
+
+
+def block2_dalvi_scale(df: pd.DataFrame) -> pd.DataFrame:
     models = {
         "LightGBM, location and time only": predict_location_time_only,
         BASELINE: predict_baseline,
@@ -165,9 +175,8 @@ def block2_dalvi_scale(df: pd.DataFrame) -> pd.DataFrame:
         PHYSICS: predict_within_between_physics,
     }
     rows = [{"model": "Dalvi et al. (2026), reported", "random_R2": 0.651, "random_MAE": 0.619, **DALVI_OCEAN_R2}]
-    for name, predict in models.items():
-        random_sc = score(ln.y.to_numpy(), out_of_fold(ln, random_folds, predict), ln.study)
-        rows.append({"model": name, "random_R2": random_sc["R2"], "random_MAE": random_sc["MAE"], **strict_looo(ln, predict)})
+    rows += [dalvi_row(name, df, predict) for name, predict in models.items()]
+    rows += [dalvi_row(f"{name}, as archived", as_archived(df), models[name]) for name in (BASELINE, CONSTRAINED)]
     res = pd.DataFrame(rows)
     res["looo_mean"] = res[OCEANS].mean(axis=1)
     res.to_csv(ARTIFACTS / "v2_dalvi_scale.csv", index=False)
@@ -293,12 +302,20 @@ def fit_tobit(train: pd.DataFrame, test: pd.DataFrame, sigma: float = 0.9) -> tu
     return start + booster.predict(x_tr) + transport_offset(train, beta), start + booster.predict(x_te) + transport_offset(test, beta)
 
 
-def positive_level_model(name: str) -> Predictor:
-    return {
-        "Two-part, constrained protocol": predict_constrained_protocol,
-        "Two-part, Within-Between Physics": predict_within_between_physics,
-        "Baseline LightGBM, zeros at -3": predict_baseline,
-    }[name]
+class LevelModel(NamedTuple):
+    predict: Predictor
+    classifier_cols: list[str]
+    keeps_zeros: bool
+
+
+TOBIT = "Tobit LightGBM, Within-Between Physics"
+LEVEL_MODELS = {
+    "Baseline LightGBM, zeros at -3": LevelModel(predict_baseline, FEATURES, keeps_zeros=True),
+    "Two-part, baseline LightGBM": LevelModel(predict_baseline, FEATURES, keeps_zeros=False),
+    "Two-part, constrained protocol": LevelModel(predict_constrained_protocol, PROTOCOL_FEATURES, keeps_zeros=False),
+    "Two-part, Within-Between Physics": LevelModel(predict_within_between_physics, PROTOCOL_FEATURES, keeps_zeros=False),
+}
+CENSORED_MODELS = [*LEVEL_MODELS, TOBIT]
 
 
 SIGMA_GRID = np.round(np.arange(0.3, 2.51, 0.05), 2)
@@ -310,7 +327,7 @@ def censored_fold(name: str, train: pd.DataFrame, test: pd.DataFrame) -> dict[st
     pos_te = (test.conc > 0).to_numpy()
     inner = list(GroupKFold(4).split(train, groups=train.study))
 
-    if name == "Tobit LightGBM, Within-Between Physics":
+    if name == TOBIT:
         f_oof, lod_oof = np.empty(len(train)), np.empty(len(train))
         for itr, iva in inner:
             f_oof[iva] = fit_tobit(train.iloc[itr], train.iloc[iva])[1]
@@ -327,38 +344,31 @@ def censored_fold(name: str, train: pd.DataFrame, test: pd.DataFrame) -> dict[st
         f = fit_tobit(train, test)[1]
         return mixed_scores(tobit_detection(f, lod_te, sigma), tobit_level(f, lod_te, sigma), z_te, pos_te, level_sigma)
 
-    naive = name.startswith("Baseline")
-    fit_rows = train if naive else train[train.conc > 0].assign(y=lambda t: np.log10(t.conc))
-    predict = positive_level_model(name)
-    level_oof = out_of_fold(fit_rows, list(GroupKFold(4).split(fit_rows, groups=fit_rows.study)), predict)
+    model = LEVEL_MODELS[name]
+    fit_rows = train if model.keeps_zeros else train[train.conc > 0].assign(y=lambda t: np.log10(t.conc))
+    level_oof = out_of_fold(fit_rows, list(GroupKFold(4).split(fit_rows, groups=fit_rows.study)), model.predict)
     level_sigma = positive_rmse(fit_rows, level_oof)
 
-    cols = FEATURES if naive else PROTOCOL_FEATURES
-    x_tr, x_te, _ = design_matrices(train, test, cols)
+    x_tr, x_te, _ = design_matrices(train, test, model.classifier_cols)
     classifier = LGBMClassifier(n_estimators=150, max_depth=3, num_leaves=7, min_child_samples=30, learning_rate=0.05,
                                 random_state=SEED, n_jobs=4, verbose=-1)
     p = classifier.fit(x_tr, (train.conc > 0).astype(int)).predict_proba(x_te)[:, 1]
-    return mixed_scores(p, predict(fit_rows, test), z_te, pos_te, level_sigma)
-
-
-CENSORED_MODELS = [
-    "Baseline LightGBM, zeros at -3",
-    "Two-part, constrained protocol",
-    "Two-part, Within-Between Physics",
-    "Tobit LightGBM, Within-Between Physics",
-]
+    return mixed_scores(p, model.predict(fit_rows, test), z_te, pos_te, level_sigma)
 
 
 def censored_split(df: pd.DataFrame, folds: Folds, name: str) -> dict[str, float]:
-    parts = {k: np.empty(len(df)) for k in ("nll", "detection_nll", "level_nll", "p", "level")}
+    parts = {k: np.empty(len(df)) for k in ("nll", "detection_nll", "level_nll", "p", "level", "limit")}
     for tr, te in folds:
         for k, v in censored_fold(name, df.iloc[tr], df.iloc[te]).items():
             parts[k][te] = v
+        parts["limit"][te] = detection_limits(df.iloc[tr], df.iloc[te])[1]
     positive = (df.conc > 0).to_numpy()
-    sc = score(np.log10(df.conc.to_numpy()[positive]), parts["level"][positive], df.study.iloc[positive])
+    z = np.log10(df.conc.to_numpy()[positive])
+    sc = score(z, parts["level"][positive], df.study.iloc[positive])
     return {"nll": parts["nll"].mean(), "detection_nll": parts["detection_nll"].mean(),
             "level_nll": parts["level_nll"][positive].mean(), "auc": roc_auc_score(positive, parts["p"]),
-            "pos_R2": sc["R2"], "pos_MAE": sc["MAE"], "pos_within_1_log": sc["within_1_log"], "pos_miss_gt_2_log": sc["miss_gt_2_log"]}
+            "pos_R2": sc["R2"], "pos_MAE": sc["MAE"], "pos_within_1_log": sc["within_1_log"], "pos_miss_gt_2_log": sc["miss_gt_2_log"],
+            "pos_below_limit": (z < parts["limit"][positive]).mean()}
 
 
 def block4_censored(df: pd.DataFrame) -> pd.DataFrame:
@@ -377,12 +387,6 @@ def block4_censored(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def block5_sensitivity(df: pd.DataFrame) -> pd.DataFrame:
-    subsets = {
-        "Full dataset": df,
-        "Drop bongo net (Arteaga 2024)": df[df.method != "bongo net"],
-        "Drop Barrows & Dehm": df[~df.doi.isin([BARROWS_DOI, DEHM_DOI])],
-        "Drop Barrows, Dehm & bongo": df[~df.doi.isin([BARROWS_DOI, DEHM_DOI]) & (df.method != "bongo net")],
-    }
     models = {
         BASELINE: predict_baseline,
         "LightGBM, protocol only": predict_protocol_only,
@@ -392,7 +396,7 @@ def block5_sensitivity(df: pd.DataFrame) -> pd.DataFrame:
         f"{PHYSICS}, min 10 per leaf": partial(predict_within_between_physics, min_child_samples=10),
     }
     rows = []
-    for label, sub in subsets.items():
+    for label, sub in sensitivity_subsets(df).items():
         sub = sub.reset_index(drop=True)
         fold_sets = repeated_folds(sub)
         org_fold_sets = repeated_folds(sub, "organization")
@@ -402,11 +406,47 @@ def block5_sensitivity(df: pd.DataFrame) -> pd.DataFrame:
         for name, s in per_split.items():
             rows.append({"subset": label, "rows": len(sub), "studies": sub.study.nunique(), "largest_org_share": largest_org_share,
                          "model": name, "R2_mean": s.R2.mean(), "wins_vs_baseline": wins(s.R2, per_split[BASELINE].R2),
-                         "MAE": s.MAE.mean(), "miss_gt_2_log": s.miss_gt_2_log.mean(),
+                         "MAE": s.MAE.mean(), "study_MAE": s.study_MAE.mean(), "miss_gt_2_log": s.miss_gt_2_log.mean(),
                          "org_R2": per_org_split[name].R2.mean(),
                          "org_wins_vs_baseline": wins(per_org_split[name].R2, per_org_split[BASELINE].R2)})
     res = pd.DataFrame(rows)
     res.to_csv(ARTIFACTS / "v2_sensitivity.csv", index=False)
+    return res
+
+
+SHALLOW = "Shallow protocol, squared loss"
+BOOTSTRAP_PAIRS = [(CONSTRAINED, BASELINE), (PHYSICS, BASELINE), (PHYSICS, CONSTRAINED), (CONSTRAINED, SHALLOW)]
+BOOTSTRAP_METRICS = ["R2", "MAE", "study_MAE"]
+
+
+def block6_study_bootstrap(df: pd.DataFrame, draws: int = 1000) -> pd.DataFrame:
+    fold_sets = repeated_folds(df)
+    names = sorted({name for pair in BOOTSTRAP_PAIRS for name in pair})
+    preds = {name: oof_predictions(df, fold_sets, MODELS[name]) for name in names}
+    y = df.y.to_numpy()
+    members = list(df.groupby("study").indices.values())
+
+    def deltas(rows: np.ndarray, groups: pd.Series) -> dict[tuple[str, str, str], float]:
+        scores = {name: [score(y[rows], p[rows], groups) for p in preds[name]] for name in names}
+        return {(a, b, m): float(np.mean([sa[m] - sb[m] for sa, sb in zip(scores[a], scores[b], strict=True)]))
+                for a, b in BOOTSTRAP_PAIRS for m in BOOTSTRAP_METRICS}
+
+    observed = deltas(np.arange(len(df)), df.study)
+    rng = np.random.default_rng(SEED)
+    samples = []
+    for _ in range(draws):
+        picked = rng.integers(len(members), size=len(members))
+        rows = np.concatenate([members[i] for i in picked])
+        groups = pd.Series(np.repeat(np.arange(len(picked)), [len(members[i]) for i in picked]))
+        samples.append(deltas(rows, groups))
+    boot = pd.DataFrame(samples)
+    res = pd.DataFrame([
+        {"model": a, "against": b, "metric": m, "delta": observed[a, b, m],
+         "ci_low": boot[a, b, m].quantile(0.025), "ci_high": boot[a, b, m].quantile(0.975),
+         "share_positive": (boot[a, b, m] > 0).mean()}
+        for a, b, m in observed
+    ])
+    res.to_csv(ARTIFACTS / "v2_study_bootstrap.csv", index=False)
     return res
 
 
@@ -420,6 +460,7 @@ def main() -> None:
         ("SURFACE NETS", block3_surface_nets),
         ("CENSORED", block4_censored),
         ("SENSITIVITY", block5_sensitivity),
+        ("STUDY BOOTSTRAP", block6_study_bootstrap),
     ]
     for title, block in blocks:
         print(f"\n=== {title} ===")

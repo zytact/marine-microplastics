@@ -11,8 +11,6 @@ from xgboost import XGBClassifier, XGBRegressor
 
 from core import (
     ARTIFACTS,
-    BARROWS_DOI,
-    DEHM_DOI,
     FEATURES,
     NUMERIC,
     OFFSET_C,
@@ -30,6 +28,7 @@ from core import (
     predict_within_between_physics,
     repeated_folds,
     score,
+    sensitivity_subsets,
     study_constant_oracle,
     weighted_quantile,
 )
@@ -149,14 +148,8 @@ def grouped_r2(df: pd.DataFrame, fold_sets: list[Folds], predict) -> float:
 
 
 def step2_sensitivity(df: pd.DataFrame) -> pd.DataFrame:
-    subsets = {
-        "Full dataset": df,
-        "Drop bongo net (Arteaga 2024)": df[df.method != "bongo net"],
-        "Drop Barrows & Dehm": df[~df.doi.isin([BARROWS_DOI, DEHM_DOI])],
-        "Drop Barrows, Dehm & bongo": df[~df.doi.isin([BARROWS_DOI, DEHM_DOI]) & (df.method != "bongo net")],
-    }
     rows = []
-    for label, sub in subsets.items():
+    for label, sub in sensitivity_subsets(df).items():
         sub = sub.reset_index(drop=True)
         random_folds = list(KFold(5, shuffle=True, random_state=SEED).split(sub))
         study_folds = repeated_folds(sub)
@@ -165,6 +158,7 @@ def step2_sensitivity(df: pd.DataFrame) -> pd.DataFrame:
             "rows": len(sub),
             "studies": sub.study.nunique(),
             "ICC": intraclass_correlation(sub),
+            "y_variance": sub.y.var(),
             "random_R2": score(sub.y.to_numpy(), out_of_fold(sub, random_folds, predict_baseline), sub.study)["R2"],
             "random_location_time_R2": score(sub.y.to_numpy(), out_of_fold(sub, random_folds, predict_location_time_only), sub.study)["R2"],
             "grouped_R2": grouped_r2(sub, study_folds, predict_baseline),
@@ -244,7 +238,8 @@ def interval_split(df: pd.DataFrame, folds: Folds, alpha: float = 0.10) -> pd.Da
             "cqr_study_lo": lo - q_cqr_study, "cqr_study_hi": hi + q_cqr_study,
             "physics_row_lo": physics - q_physics, "physics_row_hi": physics + q_physics,
             "unseen_method": (~test.method.isin(set(train.method))).astype(float).to_numpy(),
-            "mesh_out_of_range": (test.log_mesh.isna() | (test.log_mesh < mesh.min()) | (test.log_mesh > mesh.max())).astype(float).to_numpy(),
+            "mesh_below_range": (test.log_mesh < mesh.min()).astype(float).to_numpy(),
+            "mesh_above_range": (test.log_mesh > mesh.max()).astype(float).to_numpy(),
             "far_any_km": nearest_km(train, test),
             "far_family_km": same_family_km,
         }
@@ -282,13 +277,19 @@ def interval_summary(df: pd.DataFrame, split: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def mesh_out_of_range(split: pd.DataFrame) -> np.ndarray:
+    return (split.mesh_below_range.to_numpy() + split.mesh_above_range.to_numpy()) > 0
+
+
 def flag_masks(df: pd.DataFrame, split: pd.DataFrame) -> pd.DataFrame:
     cqr_width = (split.cqr_study_hi - split.cqr_study_lo).to_numpy()
     return pd.DataFrame({
         "abs_err": np.abs(split.base_pred.to_numpy() - df.y.to_numpy()),
         "Unseen sampling method": split.unseen_method.to_numpy() > 0,
         "Bulk water or pump": (df.method_family != "surface net").to_numpy(),
-        "Mesh outside training range": split.mesh_out_of_range.to_numpy() > 0,
+        "Mesh outside training range": mesh_out_of_range(split),
+        "Mesh below training range": split.mesh_below_range.to_numpy() > 0,
+        "Mesh above training range": split.mesh_above_range.to_numpy() > 0,
         ">500 km to any training sample": split.far_any_km.to_numpy() > 500,
         ">500 km to same-family training sample": split.far_family_km.to_numpy() > 500,
         "Widest 25% of CQR intervals": cqr_width > np.quantile(cqr_width, 0.75),
@@ -320,7 +321,7 @@ def risk_coverage(df: pd.DataFrame, split: pd.DataFrame, seed: int) -> pd.DataFr
     flag_count = (
         split.unseen_method.to_numpy()
         + (df.method_family != "surface net").to_numpy()
-        + split.mesh_out_of_range.to_numpy()
+        + mesh_out_of_range(split)
         + (split.far_family_km.to_numpy() > 500)
     )
     curves = {
@@ -435,7 +436,7 @@ def step5_calibration_and_ranking(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Da
         for name, split_preds in preds.items():
             per_model[name] = np.array([
                 score(df.y.to_numpy()[np.isnan(pool)], calibrated(df, pred, pool, k, shrink)[np.isnan(pool)], df.study[np.isnan(pool)])["R2"]
-                for pred, pool, shrink in zip(split_preds, pools, shrinks)
+                for pred, pool, shrink in zip(split_preds, pools, shrinks, strict=True)
             ])
         for name, r2 in per_model.items():
             calibration_rows.append({"samples": k, "model": name, "R2_mean": r2.mean(),
