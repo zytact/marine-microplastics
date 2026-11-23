@@ -83,9 +83,9 @@ def benchmark() -> None:
     labels = {
         CONSTRAINED: "Constrained protocol",
         "Interaction-constrained, monotonic": "Interaction-constrained",
-        "Shallow protocol, squared loss": "Shallow (Table III)",
-        "Shallow protocol, Huber": "Shallow, Huber (Table III)",
-        "Shallow protocol, monotonic, squared loss": "Shallow, monotonic (Table III)",
+        "Shallow protocol, squared loss": "Shallow (Table VI)",
+        "Shallow protocol, Huber": "Shallow, Huber (Table VI)",
+        "Shallow protocol, monotonic, squared loss": "Shallow, monotonic (Table VI)",
     }
     left.set_yticks(range(len(order)), [labels.get(m, m) for m in order])
     left.invert_yaxis()
