@@ -152,6 +152,7 @@ def surface_and_censored() -> None:
 
     rows = [
         ("Baseline LightGBM, zeros at -3", "Baseline, zeros at $-3$", ORANGE),
+        ("Two-part, baseline LightGBM", "Two-part, baseline", ORANGE),
         ("Two-part, constrained protocol", "Two-part, constrained", AQUA),
         ("Two-part, Within-Between Physics", "Two-part, Physics", BLUE),
         ("Tobit LightGBM, Within-Between Physics", "Tobit, Physics", VIOLET),
