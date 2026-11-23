@@ -4,7 +4,7 @@ Updated 2026-11-23.
 
 ## Where things live
 
-- Paper (IEEE journal draft): `paper/main.tex`, built with `tectonic`. Figures come from `paper/figures.py`, which reads `artifacts/`. It replaces the old markdown report and v2 write-up.
+- Semester project report: `paper/main.tex`, built with `tectonic`. Figures come from `paper/figures.py`, which reads `artifacts/`. It replaces the old markdown report and v2 write-up.
 - Paper experiments: `experiments.py` (baselines, sensitivity, intervals, flags) and `experiments_v2.py` (diagnosis, constrained models, Dalvi-scale LOOO, surface nets, censored models, robustness). Both import `core.py`. Run commands and checksums: `docs/replication.md` section 14.
 - Notebook `microplastics.py`: the original exploratory audit. The paper no longer quotes it (its GAMM needs R, which is not installed here). It still uses `StandardScaler` and 52 raw organization names. `environment.py` ports its environmental covariates for `experiments.py`.
 - Literature audit: `docs/literature-review.md`.
@@ -39,7 +39,7 @@ Arnab wants results explained in plain language with numbers.
 
 Gourab sent a ChatGPT/Codex revision of commit cb24722 on 2026-11-23 (PDF plus reports, kept outside the repo). We kept this repo's paper as the base and adopted its verified fixes (Zhen naming, Chan values, Dehm urban/rural means, archived MAE nuance, per-study robustness). We rejected its "proposed rescaling" framing, its in-manuscript placeholders, and its last-digit changes, which come from a different package environment.
 
-This is a semester project, not a journal submission. Keep the IEEE journal format for now; the format will change later. Do not name the GitHub repo in the paper ("available from the authors on request").
+This is a semester project, not a journal submission. `paper/main.tex` follows the department report layout of Gourab and Arnab's earlier semester report (title page, declaration, certificate, acknowledgement, then chapters with IEEE-style references). Keep the paper's own sections; only the look comes from that layout. Do not name the GitHub repo in the paper ("available from the authors on request").
 
 ## Open items
 

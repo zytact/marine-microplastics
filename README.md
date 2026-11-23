@@ -37,7 +37,7 @@ either one and jupytext keeps them in sync. It is also easier to read in a diff.
 
 ## Paper
 
-`paper/main.tex` is the IEEE journal draft. Its numbers come from `experiments.py` and `experiments_v2.py`,
+`paper/main.tex` is the semester project report. Its numbers come from `experiments.py` and `experiments_v2.py`,
 which share data loading and models through `core.py` and write CSVs to `artifacts/`. `paper/figures.py`
 draws the figures from those CSVs. `docs/replication.md` section 14 lists the commands and the values each
 output should match.

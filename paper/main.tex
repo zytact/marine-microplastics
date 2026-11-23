@@ -1,43 +1,195 @@
-\documentclass[journal]{IEEEtran}
+\documentclass[12pt,a4paper]{report}
 
 \usepackage[T1]{fontenc}
-\usepackage{amsmath,amssymb}
+\usepackage{newtxtext,newtxmath}
+\usepackage[a4paper,left=1.25in,right=1in,top=1in,bottom=1in,headheight=15pt]{geometry}
+\usepackage{setspace}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{cite}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage[labelsep=colon,font=normalsize,skip=6pt]{caption}
+\usepackage{enumitem}
+\usepackage{rotating}
 \usepackage[hidelinks]{hyperref}
 
-\graphicspath{{figures/}}
+\graphicspath{{figures/}{logos/}}
 
 \newcommand{\Rsq}{$R^2$}
+\newcommand{\reporttitle}{What Transfers Across Studies? An Internal and External Audit of Machine Learning for Marine Microplastic Concentrations}
+\newcommand{\shorttitle}{What Transfers Across Studies?}
+
+\onehalfspacing
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlength{\emergencystretch}{3em}
+\setlist{itemsep=4pt}
+
+\titleformat{\chapter}[display]{\normalfont\large\bfseries\centering}{CHAPTER \thechapter}{12pt}{}
+\titlespacing*{\chapter}{0pt}{40pt}{30pt}
+\titleformat{name=\chapter,numberless}{\normalfont\large\bfseries\centering}{}{0pt}{}
+\titlespacing*{name=\chapter,numberless}{0pt}{40pt}{30pt}
+\titleformat{\section}{\normalfont\normalsize\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{1em}{}
+\titlespacing*{\section}{0pt}{18pt}{8pt}
+\titlespacing*{\subsection}{0pt}{14pt}{6pt}
+
+\renewcommand{\cfttoctitlefont}{\Huge\bfseries}
+\renewcommand{\cftlottitlefont}{\Huge\bfseries}
+\renewcommand{\cftloftitlefont}{\Huge\bfseries}
+\renewcommand{\cftfigpresnum}{\figurename~}
+\renewcommand{\cfttabpresnum}{\tablename~}
+\setlength{\cftfignumwidth}{5.5em}
+\setlength{\cfttabnumwidth}{5em}
+\renewcommand{\bibname}{REFERENCES}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\small\shorttitle}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\thepage}\renewcommand{\headrulewidth}{0pt}}
+
+\newcommand{\departmentheader}{%
+  \begin{center}
+    \includegraphics[width=1.15in]{gauhati-university-mono.png}\par\vspace{10pt}
+    {\fontsize{14}{17}\selectfont\textbf{GAUHATI UNIVERSITY}}\par
+    {\fontsize{14}{17}\selectfont\textbf{DEPARTMENT OF INFORMATION TECHNOLOGY}}\par
+    {\fontsize{13}{16}\selectfont Gopinath Bordoloi Nagar, Jalukbari Guwahati-781014}
+  \end{center}}
+
+\newcommand{\pageheading}[1]{\begin{center}{\fontsize{17}{20}\selectfont\textbf{#1}}\end{center}\vspace{6pt}}
+
+\newcommand{\signature}[2]{%
+  \begin{flushright}
+    \textbf{#1}\\
+    \textit{(Roll no. #2)}\\
+    Branch: Information Technology\\
+    Date: \rule{1in}{0.4pt}
+  \end{flushright}}
 
 \begin{document}
 
-\title{What Transfers Across Studies? An Internal and External Audit of Machine Learning for Marine Microplastic Concentrations}
+\pagenumbering{Alph}
+\pagestyle{empty}
+\begin{singlespace}
 
-\author{Arnab~Chakraborty and Gourab~Adhikari%
-\thanks{The authors are with the Department of Information Technology, Gauhati University, Guwahati, Assam, India.}%
-\thanks{Manuscript draft, November 2026.}}
+\begin{center}
+\setlength{\parskip}{0pt}
+\vspace*{0.1in}
+{\fontsize{18}{23}\selectfont\textbf{WHAT TRANSFERS ACROSS STUDIES? AN INTERNAL AND EXTERNAL AUDIT OF MACHINE LEARNING FOR MARINE MICROPLASTIC CONCENTRATIONS}\par}
+\vspace{0.35in}
+{\fontsize{16}{20}\selectfont\textbf{REPORT SUBMITTED IN PARTIAL FULFILLMENT OF THE REQUIREMENT FOR THE DEGREE OF}\par}
+\vspace{12pt}
+{\fontsize{16}{20}\selectfont\textbf{BACHELOR OF TECHNOLOGY\\IN\\INFORMATION TECHNOLOGY}\par}
+\vspace{18pt}
+{\fontsize{14}{17}\selectfont\textbf{By}\par}
+\vspace{16pt}
+{\fontsize{16}{19}\selectfont\textbf{Gourab Adhikari}\par}
+{\fontsize{13}{16}\selectfont\textit{(Roll Number: 230102003)}\par}
+{\fontsize{16}{19}\selectfont\textbf{Arnab Chakraborty}\par}
+{\fontsize{13}{16}\selectfont\textit{(Roll Number: 230102016)}\par}
+\vspace{18pt}
+{\fontsize{13}{16}\selectfont\textbf{UNDER THE GUIDANCE\\OF}\par}
+\vspace{8pt}
+{\fontsize{13}{16}\selectfont\textbf{Dr. Kuwali Talukdar}\par}
+{\fontsize{12}{15}\selectfont\textit{(Assistant Professor, Dept. of Information Technology)}\par}
+\vspace{14pt}
+\includegraphics[width=1.5in]{gauhati-university-color.png}\par
+\vspace{14pt}
+{\fontsize{16}{20}\selectfont\textbf{DEPARTMENT OF INFORMATION TECHNOLOGY\\GAUHATI UNIVERSITY\\GUWAHATI, INDIA}\par}
+\vspace{10pt}
+{\fontsize{13}{16}\selectfont December 2026\par}
+\end{center}
 
-\markboth{Manuscript draft}{Chakraborty and Adhikari: An Audit of Marine Microplastic Models}
+\begin{spacing}{1.15}
+\fontsize{13}{16}\selectfont
 
-\maketitle
+\clearpage
+\departmentheader
+\vspace{0.25in}
+\pageheading{DECLARATION}
 
-\begin{abstract}
+We, \textbf{Gourab Adhikari} and \textbf{Arnab Chakraborty}, bearing Roll Nos.\ 230102003 and 230102016 respectively, B.Tech.\ students of the Department of Information Technology, Gauhati University, hereby declare that we have compiled this report reflecting all our work during the semester-long full-time project as part of our B.Tech.\ curriculum.
+
+We declare that all descriptions, analysis, results, claims, and figures presented in this report are related to our own project work on the ``\textit{\reporttitle}'', and nothing has been copied or replicated from others' work without proper citation.
+
+We further declare that this report, or any substantial portion thereof, has not been submitted anywhere else as part of any requirement for any degree or diploma.
+
+\vspace{0.3in}
+\signature{Gourab Adhikari}{230102003}
+\vspace{0.15in}
+\signature{Arnab Chakraborty}{230102016}
+
+\clearpage
+\departmentheader
+\vspace{0.2in}
+\begin{flushright}Date: \rule{1in}{0.4pt}\end{flushright}
+\vspace{0.1in}
+\pageheading{CERTIFICATE}
+
+This is to certify that \textbf{Gourab Adhikari} and \textbf{Arnab Chakraborty} bearing Roll Nos.\ 230102003 and 230102016 respectively, have successfully carried out the project work ``\textit{\reporttitle}'' under my supervision and have compiled this report reflecting the candidates work in the semester-long project. The candidates did this project full time during the whole semester under my supervision, and the analysis, results, and claims are all related to their studies and work during the semester.
+
+I recommend submission of this project report as partial fulfillment of the requirements for the degree of Bachelor of Technology in Information Technology.
+
+\vspace{0.8in}
+\textbf{Dr. Kuwali Talukdar}\\
+\textit{(Assistant Professor)}\\
+\textit{(Dept. of Information Technology)}
+
+\clearpage
+\departmentheader
+\vspace{0.25in}
+\pageheading{ACKNOWLEDGEMENT}
+
+We would like to express our sincere gratitude to our project guide \textbf{Dr. Kuwali Talukdar}, Assistant Professor, Department of Information Technology, Gauhati University, for her invaluable guidance, constant encouragement, and constructive suggestions throughout the course of this project.
+
+We are also grateful to the Head of Department and all the faculty members of the Department of Information Technology for their support and motivation.
+
+We extend our heartfelt thanks to the developers of the open-source tools and libraries we used, including LightGBM, XGBoost, CatBoost, scikit-learn, pandas, and Matplotlib, and to the AOMI, NOAA NCEI, the PANGAEA data publisher, and Zhao~\textit{et al.}, through figshare, for making the data used in this project available.
+
+Finally, we would like to thank our families and friends for their continuous support and encouragement throughout our academic journey.
+
+\vspace{0.6in}
+\begin{flushright}
+\textbf{Gourab Adhikari}\\
+\textit{(Roll No. 230102003)}\\[0.35in]
+\textbf{Arnab Chakraborty}\\
+\textit{(Roll No. 230102016)}
+\end{flushright}
+
+\end{spacing}
+\end{singlespace}
+
+\clearpage
+\pagenumbering{arabic}
+\pagestyle{fancy}
+\chapter*{ABSTRACT}
+\thispagestyle{plain}
+\addcontentsline{toc}{chapter}{ABSTRACT}
+
 Machine learning studies of the NOAA NCEI Marine Microplastics database often report high accuracy under random cross-validation, but random splits put samples from the same cruise in both training and test sets. We audit what transfers to unseen studies, using 16,988 ocean-water samples from 72 NCEI studies and an external test of 3,044 samples from 39 survey groups that NCEI does not contain, drawn from the Atlas of Ocean Microplastics (AOMI), four PANGAEA datasets, and a published compilation of subsurface samples. Study identity explains 63.1\% of the variance in $\log_{10}$ concentration, and LightGBM falls from \Rsq{}~=~0.763 on random folds to 0.456 on unseen studies, averaged over ten study-grouped fold assignments. Two NCEI studies store concentrations $10^6$ too small, and with the archived values every tested model has a negative study-grouped \Rsq{}. After the correction, sampling protocol carries almost all of the transferable signal inside NCEI, mostly by separating fine-filter bulk-water samples from nets, while location and time alone score $-0.022$. On the 2,429 AOMI surface-net samples, no trained model beats a constant equal to the mean of NCEI's surface-net studies (mean absolute error 0.75, against 0.92 for all-feature LightGBM). The protocol-based models do worst (1.44 to 1.49), because among nets mesh size mostly identifies which large study used it. On 571 outside pump and bottle samples, 97\% of them pumps with 10 to 330~$\mu$m filters, models that see mesh size beat sampler-family constants and location and time alone (MAE 0.88 to 1.14 against 1.32 to 1.46 and 1.37). Which of those models does best depends on the sampling depth we assume where a source gives none. Ensemble spread covers 15.2\% of unseen-study samples at a nominal 90\% and 19.5\% of external samples. Study-grouped conformalized quantile regression covers 90.9\% and 93.7\%, with intervals that span a factor of 84 to 174 on either side of their center. We also report fixes that raise scores inside NCEI: shallow monotonic protocol trees (\Rsq{}~=~0.543), a within-study drift term (0.552), and a two-part model for non-detects (\Rsq{}~=~0.815 on detected samples, mostly from modeling zeros separately). A bootstrap over studies separates neither the constraint nor the drift-term \Rsq{} gain from zero, both gains vanish when the disputed studies are removed, and the constrained models fail the external surface-net test.
-\end{abstract}
 
-\begin{IEEEkeywords}
-Conformal prediction, cross-validation, distribution shift, external validation, gradient boosting, marine microplastics, sampling protocol.
-\end{IEEEkeywords}
+\textbf{Keywords:} Conformal prediction, cross-validation, distribution shift, external validation, gradient boosting, marine microplastics, sampling protocol.
 
-\section{Introduction}
+\clearpage
+\tableofcontents
+\clearpage
+\addcontentsline{toc}{chapter}{LIST OF TABLES}
+\listoftables
+\clearpage
+\addcontentsline{toc}{chapter}{LIST OF FIGURES}
+\listoffigures
 
-\IEEEPARstart{G}{lobal} compilations of marine microplastic measurements pool decades of shipboard surveys from dozens of research groups. The largest public compilation, the NOAA National Centers for Environmental Information (NCEI) Marine Microplastics database~\cite{ncei}, holds surveys that differ in sampler, mesh size, sampled volume, and laboratory protocol. A manta net with a 0.333~mm mesh typically reports 0.01 to 1 pieces/m$^3$. A Niskin bottle filtered through a membrane of a few micrometers reports 100 to 10,000 pieces/m$^3$, because particle counts rise steeply as the size cutoff falls~\cite{lindeque2020,tokai2021}. A single concentration column therefore mixes measurements that are not on the same physical scale.
+\chapter{INTRODUCTION}
+
+Global compilations of marine microplastic measurements pool decades of shipboard surveys from dozens of research groups. The largest public compilation, the NOAA National Centers for Environmental Information (NCEI) Marine Microplastics database~\cite{ncei}, holds surveys that differ in sampler, mesh size, sampled volume, and laboratory protocol. A manta net with a 0.333~mm mesh typically reports 0.01 to 1 pieces/m$^3$. A Niskin bottle filtered through a membrane of a few micrometers reports 100 to 10,000 pieces/m$^3$, because particle counts rise steeply as the size cutoff falls~\cite{lindeque2020,tokai2021}. A single concentration column therefore mixes measurements that are not on the same physical scale.
 
 Recent studies train gradient-boosted trees and learned representations on these compilations to map ocean microplastic concentrations~\cite{zhen2023,amora2025,ali2026,chan2026,dalvi2026,narayanan2026}. Most report random $k$-fold scores. On NCEI data, a random split places neighboring stations from the same cruise on both sides of the split, so a model can score well by recognizing the cruise rather than by predicting a new one. Dalvi~\textit{et al.}~\cite{dalvi2026} documented a related failure across basins. Their XGBoost model reached \Rsq{}~=~0.651 on random folds and fell to between $-0.708$ and 0.166 when a whole ocean basin was held out. Uncertainty estimates share the weakness. Spread across an ensemble of seeds measures model variance, not the shift from one survey to the next, and its coverage on new surveys has not been tested.
 
-This paper asks what a model trained on NCEI data can predict about a survey it has never seen. We make six contributions.
+This report asks what a model trained on NCEI data can predict about a survey it has never seen. We make six contributions.
 \begin{enumerate}
 \item We measure the gap between random and study-grouped validation on 16,988 samples from 72 studies. Every study-grouped score is a mean over ten study-fold assignments, alongside organization-grouped, chronological, and strict leave-one-ocean-out splits.
 \item We document a $10^6$ unit error in two NCEI studies by comparing the archive with the concentrations their publications report, and we show that without the correction every tested model has a negative mean study-grouped \Rsq{}.
@@ -47,9 +199,9 @@ This paper asks what a model trained on NCEI data can predict about a survey it 
 \item We report three fixes that raise scores inside NCEI (constrained protocol trees, a within-study drift term, and a two-part model for non-detects) and show where their gains break down or come from simpler causes.
 \end{enumerate}
 
-\section{Related Work}
+\chapter{RELATED WORK}
 
-\subsection{Machine Learning for Ocean Microplastic Concentration}
+\section{Machine Learning for Ocean Microplastic Concentration}
 
 Zhen~\textit{et al.}~\cite{zhen2023} classified 1,169 global surface samples with random forest, GBDT, and XGBoost using 16 environmental and socio-economic predictors, reaching 0.719 accuracy and 0.914 ROC AUC on a random split. Amora~\cite{amora2025} reported \Rsq{}~=~0.972 on random splits using engineered regional concentration features. Narayanan~\cite{narayanan2026} classified about 20,000 NCEI records into five concentration tiers using coordinates, month, and SatCLIP geo-embeddings, and found inconsistent transfer across basins. Hafiz~\textit{et al.}~\cite{hafiz2026} linked MODIS reflectance to NCEI labels. Their models trained on the Bay of Bengal and East China Sea scored \Rsq{} between $-0.35$ and $-0.04$ on the Mediterranean.
 
@@ -57,19 +209,19 @@ The closest work is Dalvi~\textit{et al.}~\cite{dalvi2026}, who combined contras
 
 Regional studies report lower errors on narrower targets. Ali~\textit{et al.}~\cite{ali2026} predicted raw abundance at 346 Indian Ocean points (range 0 to 3.375, standard deviation 0.683) with \Rsq{}~=~0.861 and 93.3\% coverage at a nominal 90\% on a regional holdout. Chan~\textit{et al.}~\cite{chan2026} fused AOMI observations~\cite{isobe2021} with ERA5 and Argo data in the West Pacific for 2018 to 2020 and reported \Rsq{} of 0.64, 0.76, and 0.87 for 2018, 2019, and 2020. Neither tests transfer across studies or sampling protocols.
 
-\subsection{Study-Level Leakage, Harmonization, and Censoring}
+\section{Study-Level Leakage, Harmonization, and Censoring}
 
 Leakage across studies has been measured in related microplastic problems. Khanam~\textit{et al.}~\cite{khanam2026} found FTIR polymer classification macro-F1 falling from 0.972 on random splits to an equal-study, present-class macro-F1 of 0.672 under leave-one-study-out evaluation. Monreal Hern\'andez~\cite{monreal2026} reported a similar collapse for adsorption models, and Mokeira~\textit{et al.}~\cite{mokeira2026} quantified geographic confounding in global soil microplastic prediction. Meyer and Pebesma~\cite{meyer2021} proposed restricting spatial models to their area of applicability, which motivates the out-of-support flags in Section~\ref{sec:flags}.
 
 Koelmans~\textit{et al.}~\cite{koelmans2020} proposed rescaling counts between size windows with a power law. The rescaling requires the lower and upper size limits of each measurement plus a compartment-specific exponent. NCEI does not record both limits consistently, so we model protocol directly instead. Three ideas from outside machine learning shape the fixes we test. Maximenko~\textit{et al.}~\cite{maximenko2012} showed that drifter-derived surface currents gather floating debris in subtropical convergence zones, where currents are slow. Helsel~\cite{helsel2012} describes methods for censored environmental measurements. A recorded zero alone does not show censoring, and the NCEI export does not separate true absence from non-detection, so we treat censoring as an assumption to test. Mundlak~\cite{mundlak1978} separated within-cluster slopes from between-cluster confounding in panel data.
 
-\section{Data}
+\chapter{DATA}
 
-\subsection{Source and Filtering}
+\section{Source and Filtering}
 
 We use the NCEI Marine Microplastics export~\cite{ncei}, which holds 29,076 records in 35 columns. NCEI's live service matched this export record for record on 23 November 2026. The concentration column mixes pieces/m$^3$ for water and beach sand, pieces/kg for sediment, and Nurdle Patrol counts. Keeping rows with marine setting ``Ocean water'' and unit pieces/m$^3$ leaves 16,988 samples collected from 1972 to 2024, from 73 NCEI accessions and 73 DOIs. The organization field lists the Galway-Mayo Institute of Technology under three names, including its successor, Atlantic Technological University, and Italy's National Research Council under two. Merging these reduces 52 organization names to 49.
 
-\subsection{Unit Errors}
+\section{Unit Errors}
 
 Two studies in the export are too small by a factor of $10^6$. In both, a concentration in pieces/L appears to have been divided by 1,000 rather than multiplied when converted to pieces/m$^3$.
 \begin{itemize}
@@ -80,7 +232,7 @@ Both checks compare published summary values with the archive, not individual st
 
 Barrows~\textit{et al.} count all microparticles. Of 113 particles they checked by FTIR, 57\% were synthetic, 12\% semi-synthetic, and 31\% non-synthetic. This study therefore measures a broader quantity than most net surveys.
 
-\subsection{Target and Study Definition}
+\section{Target and Study Definition}
 
 Concentrations span eight orders of magnitude, and 64\% lie below 0.1 pieces/m$^3$, where $\ln(c+1)$ is almost the identity. We model
 \begin{equation}
@@ -90,7 +242,7 @@ where $c$ is concentration in pieces/m$^3$. The offset is close to the smallest 
 
 We define a study as a connected component of records that share a DOI or an NCEI accession, which gives 72 studies. The largest, from the Sea Education Association (1986 to 2008), holds 6,135 samples, or 36\% of the data. Fourteen organizations contributed more than one study, so we also group by organization.
 
-\subsection{External Test Set}
+\section{External Test Set}
 
 The Atlas of Ocean Microplastics (AOMI)~\cite{aomi,isobe2021} collects surface-layer microplastic surveys from research groups and agencies, quality-controls them, and releases each dataset under a Creative Commons license. We downloaded all 18,860 survey records of dataset version 4.0 at processing level 0, the original uncorrected values, on 23 November 2026. AOMI imports part of NCEI. We therefore grouped its records by organization, DOI, and survey year, giving 265 group-years in 95 groups. We removed every group-year in which most records name NCEI as their source, most records carry a DOI that appears in NCEI, or more than 20\% of records lie within 15~km and 31 days of an NCEI sample. That leaves 93 group-years. We then drop one Great Lakes study, records without a concentration per cubic meter, and records with an unknown sampler. In 79 records of one group the latitude and longitude were swapped, and we swapped them back.
 
@@ -100,15 +252,15 @@ AOMI holds no new pump or bottle surveys, so we added four PANGAEA datasets that
 
 Zhao~\textit{et al.}~\cite{zhao2025} compiled subsurface samples from 1 to 60~m and published them with the mesh or filter size and sampling method of each sample (CC BY 4.0)~\cite{zhao2025data}. We drop the five source studies that NCEI holds, even where NCEI holds only part of a study, and keep nine. They give 461 samples: 436 from ships' underway pumps with 10 to 330~$\mu$m filters, 15 from Niskin bottles, and 10 from a MultiNet. We also drop one study without reported concentrations. The compilation gives no sampling date or depth. We set the year to two years before publication, leave the month to the training-fold imputer, and fill depth with the median depth of NCEI samples of the same family (3~m for pumps, 0.45~m for bottles, and 0~m for the MultiNet). Where the mesh is blank we use the lower size limit that Zhao~\textit{et al.} report. The protocol models use neither year nor month, so the date assumptions do not enter them, but they do use depth, and we repeat the test with the compilation's pumps at 1~m and 10~m.
 
-\section{Methods}
+\chapter{METHODS}
 
-\subsection{Features and Baseline Models}
+\section{Features and Baseline Models}
 
 Baseline models use seven numeric features (latitude, longitude, year, $\sin$ and $\cos$ of month, $\log_{10}$ mesh size, and $\ln(1+\text{depth})$) and one categorical feature, the sampler family. The 17 lowercased NCEI method strings map to three families. Neuston, manta, plankton, AVANI, and bongo nets form the surface-net family, the three pump methods form the pump family, and the nine bottle, bucket, jar, rosette, and grab methods form the bulk-water family. Missing depths (0.3\%) take the training-fold median, except in CatBoost, which handles missing values itself. Numeric features enter tree models unscaled. We call mesh size, depth, and family the \emph{protocol} features.
 
 We compare eight baselines. The study-mean predictor returns the training mean of the sample's study, or the global mean for an unseen study. Linear regression uses features clipped to the training range, and $k$-nearest neighbors averages the 15 nearest samples by haversine distance, weighted by inverse distance. The tree models are random forest~\cite{breiman2001} with 300 trees and at least 3 samples per leaf, XGBoost~\cite{chen2016} with 500 trees of depth 6, LightGBM~\cite{ke2017} with 500 trees, and CatBoost~\cite{prokhorenkova2018} with 500 iterations and the method string as an extra categorical feature. An XGBoost hurdle model mixes a detection classifier with a regressor on positive samples. All boosters use a learning rate of 0.05.
 
-\subsection{Validation Schemes}
+\section{Validation Schemes}
 
 \begin{enumerate}
 \item \emph{Random}: five folds over samples.
@@ -119,21 +271,21 @@ We compare eight baselines. The study-mean predictor returns the training mean o
 \item \emph{External}: train on all 16,988 NCEI samples and predict the 3,044 external samples. We report the AOMI nets and the 571 pump and bottle samples separately. Intervals are calibrated on the NCEI data exactly as in one study-grouped fold.
 \end{enumerate}
 
-\subsection{Metrics, Oracle, and Study Bootstrap}
+\section{Metrics, Oracle, and Study Bootstrap}
 
 On the $y$ scale we report pooled \Rsq{}, MAE, the share of samples within a factor of ten ($|\hat{y}-y|\le1$), and the share of errors larger than a factor of 100 ($|\hat{y}-y|>2$). Because the largest study holds 36\% of the samples, we also report \emph{study MAE}, the mean over studies of each study's MAE, which weights every study equally. As a reference we report a \emph{study-constant oracle}. It is told each unseen study's true level and predicts it for every sample in that study. Its \Rsq{} uses the study mean (0.666 in NCEI), and its MAE and threshold metrics use the study median (MAE 0.708, a factor of 5.1). The oracle has perfect between-study skill and no within-study skill. A model that predicts variation inside studies could in principle beat it. On the external test we add two constants, the mean $y$ of NCEI's samples of the same sampler family, weighted per sample and weighted per study. For the AOMI nets this is the mean of NCEI's surface-net samples.
 
 The ten assignments reuse the same 72 studies, so their spread is not a confidence interval. To ask whether a gain between two models would hold for another set of studies, we resample the 72 studies with replacement 1,000 times. We do this for four pairs (constrained protocol and Within-Between Physics against the baseline, Within-Between Physics against constrained protocol, and constrained protocol against shallow trees alone) on \Rsq{}, MAE, and study MAE. Each draw keeps every model's out-of-fold predictions fixed, recomputes the difference between the two models in each assignment on the drawn studies, and averages it over the ten assignments. We report the 2.5th and 97.5th percentiles as a 95\% interval. The trained models stay fixed, so the interval covers which studies are scored, not which were used for training.
 
-\subsection{Environmental Covariates}
+\section{Environmental Covariates}
 
 To test whether place descriptors transfer better than raw coordinates, we compute six covariates from each sample's location and month. Natural Earth~\cite{naturalearth} gives the distance to the nearest coast and the population within 200~km. Meijer~\textit{et al.}~\cite{meijer2021} give the distance to the nearest of the 1,000 largest river plastic outlets and the summed modeled emission of all outlets within 200~km. The 1991--2020 NOAA OISST climatology~\cite{reynolds2002} gives monthly sea surface temperature, and the Global Drifter Program climatology~\cite{laurindo2017} gives current speed. We fixed the radii and the outlet count before running any model. We add the six covariates to LightGBM and to CatBoost without the method string, over the same ten assignments.
 
-\subsection{Few-Sample Calibration and Within-Study Ranking}
+\section{Few-Sample Calibration and Within-Study Ranking}
 
 A new survey could measure a few samples first and use them to correct the model. For each held-out study we reveal $k$ of its samples, drawn at random from a pool of up to 20 samples and at most half the study. We shift every prediction for that study by the summed error on the revealed samples divided by $k+\lambda$, where $\lambda=(1-\text{ICC})/\text{ICC}$ is the usual shrinkage for a random intercept, with the ICC estimated on the training studies of each fold. Scores use only samples outside the pool, so every $k$ is scored on the same samples. The reference is the global training mean, calibrated the same way. To test whether models rank samples within a study, we compute the Spearman correlation between prediction and truth inside each of the 50 studies with at least 20 samples. A study with constant predictions counts as zero.
 
-\subsection{Prediction Intervals and Reliability Flags}
+\section{Prediction Intervals and Reliability Flags}
 \label{sec:flags}
 
 Within each outer study-grouped fold we build 90\% intervals in four ways.
@@ -146,7 +298,7 @@ Within each outer study-grouped fold we build 90\% intervals in four ways.
 
 We also compute binary label-free flags from each training fold: a method string not seen in training, a bulk-water or pump sampler, a mesh outside the training range, a distance over 500~km to any training sample, a distance over 500~km to any training sample of the same family, and membership in the widest quarter of study-weighted CQR intervals, ranked across all out-of-fold predictions in an assignment. For selective prediction, we rank test samples by one of four continuous risk scores (CQR interval width, ensemble standard deviation, distance to the nearest same-family training sample, and the count of the first, second, third, and fifth flags) and measure error on the samples kept as the riskiest are deferred.
 
-\subsection{Model Fixes}
+\section{Model Fixes}
 
 We tested three fixes aimed at the two problems the baseline error shows. We split the out-of-fold squared error of baseline LightGBM on unseen studies into a between-study and a within-study part, averaged over the ten assignments. The mean squared error is 2.073.
 
@@ -176,23 +328,25 @@ which is convex in $f_i$. We boost with its exact gradient and Hessian at $\sigm
 \end{itemize}
 We cannot score the models with $\ell_i$. The detection limit is a median of per-study minimums, not a hard floor, and on average 34.6\% of detected test samples lie below it. A Tobit model assigns those samples no probability. All models are therefore scored with the same held-out mixed likelihood. A zero costs $-\ln(1-p)$, and a positive sample costs $-\ln p$ plus a Gaussian negative log-likelihood of $z$ around the model's predicted level, where $p$ is the model's detection probability. We also report the two parts separately. The level spread $\sigma_z$ is the root-mean-square residual of inner study-grouped out-of-fold level predictions on positive training samples. For the Tobit model, the $\sigma$ inside its detection probability and truncated mean is the grid value from 0.3 to 2.5 that minimizes the same mixed likelihood on those inner out-of-fold predictions.
 
-\section{Results}
+\chapter{RESULTS}
 
-\subsection{Random Splits Overstate Transfer}
+\section{Random Splits Overstate Transfer}
 
 A random-intercept model $y\sim1+(1\,|\,\text{study})$ gives an intraclass correlation of 0.631, so almost two-thirds of the variance in $y$ lies between studies. Table~\ref{tab:baseline} shows the consequence. On random folds the tree ensembles reach \Rsq{} of 0.748 to 0.767. Predicting each sample's training-study mean already scores 0.664 on random folds and $-0.288$ on unseen studies, so much of a random-split score comes from recognizing the study. On unseen studies the best models are CatBoost (0.481) and LightGBM (0.456), and spatial $k$NN falls to $-1.973$.
 
 Pooled \Rsq{} also hides how uneven the folds are. The Sea Education Association study holds 36\% of the samples, so the fold that contains it dominates the pooled score. Averaged per fold instead of pooled, LightGBM scores 0.118 and CatBoost 0.252, and most other models score near zero. On the chronological split, random forest is the only baseline above zero on test studies unseen in training (0.122).
 
-\begin{table*}[!t]
+\begin{table}[!htbp]
 \centering
-\caption{Baseline models. Study-grouped columns are means over ten study-grouped fold assignments. Fold \Rsq{} averages per-fold scores instead of pooling them. The chronological columns use one train-before-2015 split, scored on all test samples and on test studies unseen in training. Bold marks the best value in each column.}
+\caption[Baseline models under random, study-grouped, and chronological validation]{Baseline models. Study-grouped columns are means over ten study-grouped fold assignments. Fold \Rsq{} averages per-fold scores instead of pooling them. The chronological columns use one train-before-2015 split, scored on all test samples and on test studies unseen in training. Bold marks the best value in each column.}
 \label{tab:baseline}
+\small
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}lcccccccc@{}}
 \toprule
  & Random & \multicolumn{5}{c}{Study-grouped} & \multicolumn{2}{c}{Chronological \Rsq}\\
 \cmidrule(lr){3-7}\cmidrule(lr){8-9}
-Model & \Rsq & \Rsq & Fold \Rsq & MAE & Study MAE & Within $10\times$ & All & Unseen studies\\
+Model & \Rsq & \Rsq & Fold \Rsq & MAE & Study MAE & Within $10\times$ & All & Unseen\\
 \midrule
 Study mean only & 0.664 & $-0.288$ & $-0.825$ & 1.790 & 1.548 & 28.0\% & $-0.228$ & $-0.958$\\
 Linear regression & 0.545 & 0.394 & 0.025 & 1.163 & 1.125 & 52.4\% & $-1.668$ & $-4.665$\\
@@ -204,19 +358,19 @@ CatBoost & 0.748 & \textbf{0.481} & \textbf{0.252} & \textbf{1.009} & \textbf{0.
 XGBoost hurdle & \textbf{0.767} & 0.399 & 0.030 & 1.073 & 1.084 & 61.8\% & 0.078 & $-0.278$\\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 For a scale-matched reference, the same LightGBM on the $\ln(c+1)$ target of Dalvi~\textit{et al.} scores \Rsq{}~=~0.815 and MAE~=~0.368 on random folds, against their reported 0.651 and 0.619. With location and time alone it still scores 0.786. The feature sets and data versions differ, so this shows that a high random-split score is easy to reach on this data, not that our model is better.
 
-\subsection{The Unit Error Decides What Transfers}
+\section{The Unit Error Decides What Transfers}
 
 Table~\ref{tab:sensitivity} repeats the audit with the archived units and without the unit-corrected and unverified studies. With the archived units, random folds still score 0.772, but every study-grouped score is negative ($-0.088$ with all features and $-0.147$ with protocol alone). In the archive the two studies lie below the typical surface-net concentration, while most other bulk-water studies lie orders of magnitude above it. A model that learns what bulk water looks like from those 1,470 samples therefore predicts the other bulk-water studies far too low. The \Rsq{} values on the two scales are not directly comparable, though. The correction doubles the variance of $y$ (1.92 archived, 3.81 corrected), and the baseline's MAE on unseen studies barely differs (1.054 against 1.048).
 
 Without the two studies, the gap between random and study-grouped validation still holds (0.761 to 0.768 against 0.223 to 0.467), and location and time stay near zero on unseen studies (at most 0.128). The advantage of protocol does not hold as well. Without Barrows and Dehm, protocol alone falls to 0.100, against 0.055 for location and time. These two studies supply the only fine-mesh bulk-water samples in large numbers. Removing the 33 bongo-net samples raises grouped \Rsq{} slightly, so they do not inflate the result.
 
-\begin{table}[!t]
+\begin{table}[!htbp]
 \centering
-\caption{LightGBM audit with the archived units and with disputed studies removed. Grouped columns are means over ten study-grouped fold assignments. B\&D: Barrows and Dehm. Bongo: Arteaga~\textit{et al.}}
+\caption[LightGBM audit with archived units and with disputed studies removed]{LightGBM audit with the archived units and with disputed studies removed. Grouped columns are means over ten study-grouped fold assignments. B\&D: Barrows and Dehm. Bongo: Arteaga~\textit{et al.}}
 \label{tab:sensitivity}
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}lcccccc@{}}
@@ -234,7 +388,7 @@ Without all three & 69 & 0.720 & 0.766 & 0.397 & 0.263 & 0.128\\
 \end{tabular}
 \end{table}
 
-\subsection{Protocol Carries the Signal Inside NCEI}
+\section{Protocol Carries the Signal Inside NCEI}
 
 On the full data, LightGBM with location and time alone scores 0.741 on random folds and $-0.022$ on unseen studies (Table~\ref{tab:sensitivity}). Protocol features alone score 0.428, close to all features together (0.456). Inside NCEI, location and time add almost nothing that transfers, and protocol carries nearly all of what does, much of it as the difference between bulk water and nets.
 
@@ -242,10 +396,10 @@ The environmental covariates point the same way. Adding the six place descriptor
 
 Few-sample calibration and within-study ranking show how little the models predict inside a study. With no revealed samples the models are far ahead of the global mean ($-0.305$), with LightGBM at 0.457 and Within-Between Physics at 0.557. Three revealed samples lift the calibrated global mean to 0.556, above calibrated LightGBM in all ten assignments and above calibrated CatBoost in five. The constrained protocol and Within-Between Physics models stay ahead of it through five samples (0.600 and 0.596 against 0.595, better in 8 and 6 of 10 assignments). They trail slightly at ten samples (0.617 and 0.616 against 0.624) and at twenty (0.640 and 0.641 against 0.647). Inside the 50 unseen studies with at least 20 samples, the median Spearman correlation between prediction and truth is 0.059 for LightGBM and 0.025 for CatBoost. The constrained protocol model gives the same prediction to almost every sample of a study, so its median is zero and only 6.2\% of studies are positive. Within-Between Physics varies mainly inside surface-net studies, through the drift term. Its median over all 50 studies is also zero, but 43.6\% are positive (Section~\ref{sec:drift}). Shifting each model's predictions to the true study mean gives \Rsq{} of 0.606 (LightGBM) to 0.660 (Within-Between Physics), all below the 0.666 of the true study mean alone. The models estimate a study's level, mostly from its protocol, and their variation within a study only adds error.
 
-\subsection{External Test}
+\section{External Test}
 \label{sec:external}
 
-Table~\ref{tab:external} scores the models on the external samples. It reports the AOMI nets and the pump and bottle samples. The other 44 external samples, net tows from PANGAEA and the compilation, enter only the interval totals and the PANGAEA-only check below. Section~\ref{sec:fixes} shows why the constrained protocol and Within-Between Physics models looked better than the baseline inside NCEI. On the 2,429 AOMI samples no trained model beats a constant. The mean $y$ of NCEI's surface-net studies, with each study weighted equally, scores MAE 0.754 and study MAE 0.777. The best trained model, all-feature LightGBM, scores 0.920 and 0.798. Weighted per sample, the same constant scores 1.175, because the Sea Education Association studies hold most of NCEI's net samples and sit low. \Rsq{} is a poor guide here. All AOMI samples come from surface nets, so $y$ varies much less than in NCEI (variance 0.949 against 3.814), and even the oracle reaches only 0.391.
+Table~\ref{tab:external} scores the models on the external samples. It reports the AOMI nets and the pump and bottle samples. The other 44 external samples, net tows from PANGAEA and the compilation, enter only the interval totals and the PANGAEA-only check below. Chapter~\ref{sec:fixes} shows why the constrained protocol and Within-Between Physics models looked better than the baseline inside NCEI. On the 2,429 AOMI samples no trained model beats a constant. The mean $y$ of NCEI's surface-net studies, with each study weighted equally, scores MAE 0.754 and study MAE 0.777. The best trained model, all-feature LightGBM, scores 0.920 and 0.798. Weighted per sample, the same constant scores 1.175, because the Sea Education Association studies hold most of NCEI's net samples and sit low. \Rsq{} is a poor guide here. All AOMI samples come from surface nets, so $y$ varies much less than in NCEI (variance 0.949 against 3.814), and even the oracle reaches only 0.391.
 
 The protocol-based models do worst (MAE 1.441 to 1.491). Among nets, protocol is almost only mesh size. The constrained protocol model predicts about $y=-0.6$ for nets finer than 0.335~mm and $y=-2.3$ to $-2.4$ for nets of 0.335~mm or coarser. That step sits at the mesh of the two Sea Education Association studies, which dominate NCEI's surface-net samples, and $-2.4$ is close to their level. The eight mainly 0.35~mm Japanese groups sit one to three orders of magnitude higher, so the constrained protocol model underpredicts each of them by 1.0 to 3.0 on average. Location and time alone do about as well as the baseline (MAE 0.964). The step also depends on depth. With AOMI's recorded net depth, 0.375~m for most of the Japanese tows, the 0.35~mm nets leave the leaf of the Sea Education Association studies, and the constrained protocol model improves to MAE 1.080, still worse than the constant. Inside NCEI the protocol models gained by separating bulk water from nets. On new net surveys that contrast is absent, and mesh size mostly identifies the studies that used it.
 
@@ -255,9 +409,9 @@ The levels are still far off for some studies, by up to 3.5 $\log_{10}$ units. T
 
 The intervals hold up. Study-grouped CQR with study weights covers 93.7\% of all 3,044 external samples at a nominal 90\% (93.7\% of the AOMI nets and 94.2\% of the pump and bottle samples), with a median width of 4.48 (a factor of 174 on either side of its center; 4.39 on AOMI nets and 5.52 on pump and bottle samples), and 34 of the 39 groups reach at least 80\% coverage. Ensemble spread covers 19.5\% and random-CV conformal 68.2\%. Symmetric intervals around Within-Between Physics cover only 63.0\%, because its point predictions are biased on these surveys.
 
-\begin{table}[!t]
+\begin{table}[!htbp]
 \centering
-\caption{External test. Nets: 2,429 AOMI surface-net samples from 26 groups. Pump and bottle: 571 samples from 11 groups in PANGAEA and the compilation of Zhao~\textit{et al.} The other 44 external samples, net tows from two groups, are in neither block. Models are trained on all NCEI data. The constants are the mean $y$ of NCEI's samples of the same sampler family, weighted per sample or per study. Bold marks the best value in each column, excluding the oracle.}
+\caption[External test on AOMI nets and on pump and bottle samples]{External test. Nets: 2,429 AOMI surface-net samples from 26 groups. Pump and bottle: 571 samples from 11 groups in PANGAEA and the compilation of Zhao~\textit{et al.} The other 44 external samples, net tows from two groups, are in neither block. Models are trained on all NCEI data. The constants are the mean $y$ of NCEI's samples of the same sampler family, weighted per sample or per study. Bold marks the best value in each column, excluding the oracle.}
 \label{tab:external}
 \setlength{\tabcolsep}{1.6pt}
 \begin{tabular}{@{}lcccccc@{}}
@@ -279,15 +433,15 @@ Study-constant oracle & 0.592 & 0.514 & 0.391 & 0.437 & 0.533 & 0.719\\
 \end{tabular}
 \end{table}
 
-\subsection{Prediction Intervals}
+\section{Prediction Intervals}
 
-Table~\ref{tab:intervals} and Fig.~\ref{fig:intervals} report intervals for baseline LightGBM on unseen NCEI studies, averaged over the ten assignments. Ensemble spread covers 15.2\% of samples at a nominal 90\% and 18.4\% at a nominal 95\%. It measures disagreement between models, not the shift to a new survey. Conformal intervals calibrated on random inner folds cover 71.2\%. Symmetric intervals calibrated across studies reach 87.1\% to 87.9\%, still short of 90\%. Study-grouped CQR reaches nominal coverage (90.6\% with row weights and 90.9\% with study weights), and on the external surveys it covers 93.7\% (Section~\ref{sec:external}). With study weights its median width inside NCEI is 3.85 $\log_{10}$ units, 24\% narrower than the row-weighted symmetric interval. A median width of 3.85 $\log_{10}$ units is a factor of 84 on either side of the interval's center, or a span of about 7,100 from bound to bound. That states plainly how little a new survey's protocol and location constrain its concentration. The coverage is an average over samples and studies, so it does not promise 90\% coverage for any single future survey.
+Table~\ref{tab:intervals} and Figure~\ref{fig:intervals} report intervals for baseline LightGBM on unseen NCEI studies, averaged over the ten assignments. Ensemble spread covers 15.2\% of samples at a nominal 90\% and 18.4\% at a nominal 95\%. It measures disagreement between models, not the shift to a new survey. Conformal intervals calibrated on random inner folds cover 71.2\%. Symmetric intervals calibrated across studies reach 87.1\% to 87.9\%, still short of 90\%. Study-grouped CQR reaches nominal coverage (90.6\% with row weights and 90.9\% with study weights), and on the external surveys it covers 93.7\% (Section~\ref{sec:external}). With study weights its median width inside NCEI is 3.85 $\log_{10}$ units, 24\% narrower than the row-weighted symmetric interval. A median width of 3.85 $\log_{10}$ units is a factor of 84 on either side of the interval's center, or a span of about 7,100 from bound to bound. That states plainly how little a new survey's protocol and location constrain its concentration. The coverage is an average over samples and studies, so it does not promise 90\% coverage for any single future survey.
 
 Within-Between Physics point predictions narrow the row-weighted symmetric study-grouped interval from 5.09 to 4.31 $\log_{10}$ units and raise row coverage from 87.1\% to 92.0\%. Mean coverage per study falls from 89.3\% to 87.3\%, and on the external surveys these intervals cover only 63.0\%.
 
-\begin{table}[!t]
+\begin{table}[!htbp]
 \centering
-\caption{Intervals for baseline LightGBM on unseen NCEI studies, averaged over ten study-grouped fold assignments. Nominal coverage is 90\% unless stated. Width is the median in $\log_{10}$ units, and the half-width factor is $10^{\text{width}/2}$. Row and study give the calibration weights. Bold marks the highest coverage and the narrowest interval among methods that reach 90\%.}
+\caption[Prediction intervals for baseline LightGBM on unseen NCEI studies]{Intervals for baseline LightGBM on unseen NCEI studies, averaged over ten study-grouped fold assignments. Nominal coverage is 90\% unless stated. Width is the median in $\log_{10}$ units, and the half-width factor is $10^{\text{width}/2}$. Row and study give the calibration weights. Bold marks the highest coverage and the narrowest interval among methods that reach 90\%.}
 \label{tab:intervals}
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}lcccc@{}}
@@ -306,22 +460,22 @@ Study CQR (study) & \textbf{90.9\%} & 91.5\% & \textbf{3.85} & $\mathbf{84\times
 \end{tabular}
 \end{table}
 
-\begin{figure*}[!t]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_intervals.pdf}
-\caption{(a) Empirical coverage on unseen studies and (b) median interval width for baseline LightGBM, averaged over ten study-grouped fold assignments. The dashed line marks the 90\% target.}
+\caption[Interval coverage and width on unseen studies]{(a) Empirical coverage on unseen studies and (b) median interval width for baseline LightGBM, averaged over ten study-grouped fold assignments. The dashed line marks the 90\% target.}
 \label{fig:intervals}
-\end{figure*}
+\end{figure}
 
-\subsection{Reliability Flags and Selective Prediction}
+\section{Reliability Flags and Selective Prediction}
 
 Table~\ref{tab:flags} shows that protocol mismatch, not distance, marks the worst predictions. Samples with a method string not seen in training are off by more than a factor of 100 in 57.9\% of cases, against 6.8\% for the rest. Bulk-water and pump samples behave similarly. A mesh outside the training range is rare (3.3\%) and covers two different cases. About half of the flagged samples come from the one 0.505~mm net study, the coarsest mesh in the data, which is flagged in every assignment and predicted normally (MAE 0.94, 4.0\% above $100\times$). The other half are the 0.45~$\mu$m membranes of Barrows~\textit{et al.} and Dehm~\textit{et al.} when both fall in the test fold, and these fail badly (MAE 2.99, 82.9\% above $100\times$). Distance over 500~km to any training sample does not matter (MAE 1.055 against 1.047). Distance to a training sample of the same family does (1.52 against 0.87).
 
-Fig.~\ref{fig:risk} shows error as risky predictions are deferred. For the baseline, ranking by CQR width or by flag count works best. Deferring the widest 10\% of CQR intervals lowers MAE from 1.048 to 0.880 and the share of errors above $100\times$ from 14.2\% to 8.4\%. Deferring 20\% gives 0.824 and 6.5\%. Ensemble spread lowers error slowest down to 80\% retention, and same-family distance stops helping below it. Within-Between Physics starts lower and stays lower. Deferring the samples with the widest 10\% of baseline CQR intervals lowers its MAE from 0.929 to 0.836, and its errors above $100\times$ from 7.4\% to 5.6\%.
+Figure~\ref{fig:risk} shows error as risky predictions are deferred. For the baseline, ranking by CQR width or by flag count works best. Deferring the widest 10\% of CQR intervals lowers MAE from 1.048 to 0.880 and the share of errors above $100\times$ from 14.2\% to 8.4\%. Deferring 20\% gives 0.824 and 6.5\%. Ensemble spread lowers error slowest down to 80\% retention, and same-family distance stops helping below it. Within-Between Physics starts lower and stays lower. Deferring the samples with the widest 10\% of baseline CQR intervals lowers its MAE from 0.929 to 0.836, and its errors above $100\times$ from 7.4\% to 5.6\%.
 
-\begin{table}[!t]
+\begin{table}[!htbp]
 \centering
-\caption{Label-free reliability flags for baseline LightGBM on unseen studies, pooled over ten study-grouped fold assignments.}
+\caption[Label-free reliability flags for baseline LightGBM]{Label-free reliability flags for baseline LightGBM on unseen studies, pooled over ten study-grouped fold assignments.}
 \label{tab:flags}
 \setlength{\tabcolsep}{2pt}
 \begin{tabular}{@{}lccccc@{}}
@@ -340,25 +494,25 @@ Widest 25\% of CQR intervals & 25.0\% & 1.71 & 0.83 & 37.3\% & 6.5\%\\
 \end{tabular}
 \end{table}
 
-\begin{figure*}[!t]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_risk_coverage.pdf}
-\caption{(a) MAE and (b) share of errors above $100\times$ on retained unseen-study samples as the riskiest predictions are deferred, averaged over ten study-grouped fold assignments. Each curve pairs a model with a risk score.}
+\caption[Error as the riskiest predictions are deferred]{(a) MAE and (b) share of errors above $100\times$ on retained unseen-study samples as the riskiest predictions are deferred, averaged over ten study-grouped fold assignments. Each curve pairs a model with a risk score.}
 \label{fig:risk}
-\end{figure*}
+\end{figure}
 
-\section{Model Fixes and Their Limits}
+\chapter{MODEL FIXES AND THEIR LIMITS}
 \label{sec:fixes}
 
-This section reports the three fixes in full, because their gains inside NCEI look convincing but hold up less well under scrutiny. The constraint and drift-term gains are tested below against a study bootstrap and the disputed studies, and against the external surveys in Section~\ref{sec:external}. The two-part model was not run on the external data.
+This chapter reports the three fixes in full, because their gains inside NCEI look convincing but hold up less well under scrutiny. The constraint and drift-term gains are tested below against a study bootstrap and the disputed studies, and against the external surveys in Section~\ref{sec:external}. The two-part model was not run on the external data.
 
-\subsection{Which Constraints Help}
+\section{Which Constraints Help}
 
 Table~\ref{tab:ablation} ablates the constrained protocol model over the ten assignments. Shallow trees alone raise mean \Rsq{} from 0.428 (deep protocol trees) to 0.527, which is most of the gain. Adding the Huber loss and the monotonic mesh constraint together raises \Rsq{} to 0.543 (better than shallow trees alone in 6 of 10 assignments), lowers MAE from 0.993 to 0.931, and cuts errors above a factor of 100 from 10.0\% to 7.1\%. Per study the picture differs. Shallow trees alone cut study MAE from 1.281 (deep protocol trees) to 1.096, still worse than the all-feature baseline (1.041). Adding the Huber loss brings it to 1.038, and the full constrained model reaches 1.021. This study-MAE drop of 0.075 is the only bootstrapped gain that separates from zero (95\% interval $-0.142$ to $-0.011$). The \Rsq{} gain over shallow trees alone is not ($-0.052$ to 0.076). Neither addition helps on its own in every metric. The Huber loss alone lowers \Rsq{} (0.512), and the monotonic constraint alone lowers the LOOO mean (0.313). Shallow trees with squared loss have the best LOOO mean (0.405), and shallow trees with the monotonic constraint have the best organization-grouped \Rsq{} (0.373).
 
-\begin{table}[!t]
+\begin{table}[!htbp]
 \centering
-\caption{Ablation of the constrained protocol model. \Rsq{}, MAE, St.\ MAE, and errors above $100\times$ are means over ten study-grouped fold assignments, Org.\ \Rsq{} is the mean over ten organization-grouped assignments, and LOOO is the strict leave-one-ocean-out mean. St.\ MAE is study MAE, which weights every study equally. Shal.: shallow trees. Hub.: Huber loss. Mono.: monotonic mesh constraint. Bold marks the best value in each column.}
+\caption[Ablation of the constrained protocol model]{Ablation of the constrained protocol model. \Rsq{}, MAE, St.\ MAE, and errors above $100\times$ are means over ten study-grouped fold assignments, Org.\ \Rsq{} is the mean over ten organization-grouped assignments, and LOOO is the strict leave-one-ocean-out mean. St.\ MAE is study MAE, which weights every study equally. Shal.: shallow trees. Hub.: Huber loss. Mono.: monotonic mesh constraint. Bold marks the best value in each column.}
 \label{tab:ablation}
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}ccccccccc@{}}
@@ -374,9 +528,9 @@ Shal. & Hub. & Mono. & \Rsq & MAE & St.\ MAE & $>100\times$ & Org.\ \Rsq & LOOO\
 \end{tabular}
 \end{table}
 
-\subsection{Constrained and Within-Between Models}
+\section{Constrained and Within-Between Models}
 
-Table~\ref{tab:v2} and Fig.~\ref{fig:benchmark} compare the main models. The constrained protocol model beats the baseline in 9 of 10 assignments. Adding the within-study drifter term raises \Rsq{} to 0.552. It beats the baseline in all ten assignments, and its worst assignment (0.476) is above the baseline mean. Against the constrained protocol model the gain is only 0.009, and it wins 7 of 10 assignments. Of the 0.096 total gain over the baseline, the constrained protocol model supplies 0.087. A second-stage coordinate tree adds nothing (0.550), so raw coordinates hold no within-study signal that transfers.
+Table~\ref{tab:v2} and Figure~\ref{fig:benchmark} compare the main models. The constrained protocol model beats the baseline in 9 of 10 assignments. Adding the within-study drifter term raises \Rsq{} to 0.552. It beats the baseline in all ten assignments, and its worst assignment (0.476) is above the baseline mean. Against the constrained protocol model the gain is only 0.009, and it wins 7 of 10 assignments. Of the 0.096 total gain over the baseline, the constrained protocol model supplies 0.087. A second-stage coordinate tree adds nothing (0.550), so raw coordinates hold no within-study signal that transfers.
 
 The study bootstrap cannot separate these gains from zero. Against the baseline, the 95\% interval for the \Rsq{} gain is $-0.047$ to 0.198 for the constrained protocol model (positive in 93\% of draws) and $-0.018$ to 0.213 for Within-Between Physics (96\%). The drifter term's gain over the constrained protocol model ($-0.036$ to 0.069) is noise. The largest study holds 36\% of the samples, so which studies happen to be in the archive moves the pooled score by more than the gains.
 
@@ -384,9 +538,10 @@ Weighting studies equally shrinks these gains. The constrained protocol model an
 
 On the other validation schemes the ranking changes. Among the models in Table~\ref{tab:v2}, the interaction-constrained model has the highest organization-grouped \Rsq{} (0.407) and LOOO mean (0.432). It is also the only LightGBM variant above zero on post-2015 studies unseen in training (0.011, against $-0.071$ for Within-Between Physics and $-0.231$ for the baseline). Grouping by organization lowers every model by 0.09 to 0.21 against grouping by study (the baseline falls from 0.456 to 0.282). No model predicts future surveys well, and the best model depends on the kind of transfer asked for.
 
-\begin{table*}[!t]
+\begin{sidewaystable}
 \centering
-\caption{Main models over ten study-grouped fold assignments, ten organization-grouped fold assignments (49 organizations), and strict leave-one-ocean-out. Wins count the study-grouped assignments in which a model beats baseline LightGBM. Bold marks the best value in each column, excluding the oracle.}
+\small
+\caption[Main models under study, organization, and leave-one-ocean-out validation]{Main models over ten study-grouped fold assignments, ten organization-grouped fold assignments (49 organizations), and strict leave-one-ocean-out. Wins count the study-grouped assignments in which a model beats baseline LightGBM. Bold marks the best value in each column, excluding the oracle.}
 \label{tab:v2}
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}lccccccccc@{}}
@@ -405,49 +560,49 @@ Within-Between Physics + coordinate stage & 0.550 & 0.467--0.570 & \textbf{10/10
 Study-constant oracle (reference) & 0.666 & -- & -- & 0.708 & 0.519 & 81.5\% & 5.6\% & -- & --\\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{sidewaystable}
 
-\begin{figure*}[!t]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_benchmark.pdf}
-\caption{(a) Pooled \Rsq{} on unseen studies for each of ten study-fold assignments (dots), their range (bar), and mean (vertical tick), for the models in Tables~\ref{tab:ablation} and~\ref{tab:v2} except location and time only. The dashed line is the study-constant oracle. (b) \Rsq{} on each held-out basin under strict leave-one-ocean-out on the $\log_{10}$ target.}
+\caption[Unseen-study \Rsq{} per fold assignment and per held-out basin]{(a) Pooled \Rsq{} on unseen studies for each of ten study-fold assignments (dots), their range (bar), and mean (vertical tick), for the models in Tables~\ref{tab:ablation} and~\ref{tab:v2} except location and time only. The dashed line is the study-constant oracle. (b) \Rsq{} on each held-out basin under strict leave-one-ocean-out on the $\log_{10}$ target.}
 \label{fig:benchmark}
-\end{figure*}
+\end{figure}
 
-\subsection{Leave-One-Ocean-Out}
+\section{Leave-One-Ocean-Out}
 
-On the $\log_{10}$ target (Fig.~\ref{fig:benchmark}b), adding coordinates and time to protocol features hurts in four of five basins. The Atlantic drops from 0.547 with protocol alone to 0.229 with all features. Within-Between Physics is positive in every basin (Indian 0.194, Pacific 0.541, Atlantic 0.444, Arctic 0.231, Southern 0.680). Against the constrained protocol model, the drifter term mainly helps the Indian (0.078 to 0.194) and Arctic (0.161 to 0.231) basins and changes the other three by 0.011 or less. The Southern Ocean holds only 27 samples from three studies, so its score is noisy.
+On the $\log_{10}$ target (Figure~\ref{fig:benchmark}b), adding coordinates and time to protocol features hurts in four of five basins. The Atlantic drops from 0.547 with protocol alone to 0.229 with all features. Within-Between Physics is positive in every basin (Indian 0.194, Pacific 0.541, Atlantic 0.444, Arctic 0.231, Southern 0.680). Against the constrained protocol model, the drifter term mainly helps the Indian (0.078 to 0.194) and Arctic (0.161 to 0.231) basins and changes the other three by 0.011 or less. The Southern Ocean holds only 27 samples from three studies, so its score is noisy.
 
-These scores cannot be compared with those of Dalvi~\textit{et al.}, who used $\ln(c+1)$. We therefore refit the models on $\ln(c+1)$ (Fig.~\ref{fig:dalvi}). LightGBM with location and time alone reproduces their failure. It is negative in four of five basins and reaches $-3.00$ in the Indian Ocean. The protocol-only, constrained, and Within-Between models are positive in all five basins on this scale, while the all-features baseline still scores $-0.267$ in the Arctic. The constrained protocol model scores 0.564 to 0.704 (mean 0.648), above the values Dalvi~\textit{et al.} report in every basin. The drifter term adds nothing on this scale (mean 0.640). Four differences remain. We apply the unit correction, which places the median of the 1,470 corrected bulk-water samples at $\ln(c+1)=8.3$ while the surface-net median is 0.011, so part of our higher \Rsq{} comes from that larger, protocol-driven spread. Our strict study exclusion removes more training data than a plain basin split. Their model uses environmental predictors that ours does not. Their data version may differ from ours. With the archived units, the constrained protocol model falls below zero in four of five basins, and far below in the Southern Ocean, where the 27 held-out samples barely vary on this scale. Our advantage over Dalvi~\textit{et al.} therefore depends on the correction.
+These scores cannot be compared with those of Dalvi~\textit{et al.}, who used $\ln(c+1)$. We therefore refit the models on $\ln(c+1)$ (Figure~\ref{fig:dalvi}). LightGBM with location and time alone reproduces their failure. It is negative in four of five basins and reaches $-3.00$ in the Indian Ocean. The protocol-only, constrained, and Within-Between models are positive in all five basins on this scale, while the all-features baseline still scores $-0.267$ in the Arctic. The constrained protocol model scores 0.564 to 0.704 (mean 0.648), above the values Dalvi~\textit{et al.} report in every basin. The drifter term adds nothing on this scale (mean 0.640). Four differences remain. We apply the unit correction, which places the median of the 1,470 corrected bulk-water samples at $\ln(c+1)=8.3$ while the surface-net median is 0.011, so part of our higher \Rsq{} comes from that larger, protocol-driven spread. Our strict study exclusion removes more training data than a plain basin split. Their model uses environmental predictors that ours does not. Their data version may differ from ours. With the archived units, the constrained protocol model falls below zero in four of five basins, and far below in the Southern Ocean, where the 27 held-out samples barely vary on this scale. Our advantage over Dalvi~\textit{et al.} therefore depends on the correction.
 
-\begin{figure}[!t]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=\columnwidth]{fig_dalvi_scale.pdf}
-\caption{Strict leave-one-ocean-out \Rsq{} on the $\ln(c+1)$ target of Dalvi~\textit{et al.}~\cite{dalvi2026}, against the values they report. The Indian Ocean value for location and time is clipped at the axis edge.}
+\includegraphics[width=0.7\textwidth]{fig_dalvi_scale.pdf}
+\caption[Leave-one-ocean-out \Rsq{} on the $\ln(c+1)$ target of Dalvi et al.]{Strict leave-one-ocean-out \Rsq{} on the $\ln(c+1)$ target of Dalvi~\textit{et al.}~\cite{dalvi2026}, against the values they report. The Indian Ocean value for location and time is clipped at the axis edge.}
 \label{fig:dalvi}
 \end{figure}
 
-\subsection{Drift Accumulation Inside Surface-Net Studies}
+\section{Drift Accumulation Inside Surface-Net Studies}
 \label{sec:drift}
 
 The drifter term shows its signal inside comparable surveys rather than in the global score. We take the 32 surface-net studies with at least 20 samples in which every candidate feature varies. In these studies the median within-study Spearman correlation between $a$ and $y$ is $+0.141$, positive in 62.5\% of studies. Scalar current speed from the same climatology correlates negatively ($-0.100$, positive in 34.4\%). Latitude ($+0.045$), absolute latitude (0.000), and longitude ($-0.038$) correlate near zero. Debris collects where currents are weak, as the convergence-zone picture predicts.
 
-On the 14,233 surface-net samples from 58 studies (Fig.~\ref{fig:physics}a), baseline LightGBM scores a mean \Rsq{} of only 0.035 over ten assignments. The constrained protocol model reaches 0.253, and Within-Between Physics reaches 0.275 and beats it in all ten assignments. The oracle reaches 0.553. These gains are fragile. The worst assignment is negative for every model ($-0.170$ for Within-Between Physics), and every model scores below zero on the organization-grouped split of this subset. There the baseline ($-0.179$) does better than the constrained protocol model ($-0.289$) and Within-Between Physics ($-0.327$). The external test confirms it. Predicting a new organization's net survey from other organizations' net surveys remains unsolved.
+On the 14,233 surface-net samples from 58 studies (Figure~\ref{fig:physics}a), baseline LightGBM scores a mean \Rsq{} of only 0.035 over ten assignments. The constrained protocol model reaches 0.253, and Within-Between Physics reaches 0.275 and beats it in all ten assignments. The oracle reaches 0.553. These gains are fragile. The worst assignment is negative for every model ($-0.170$ for Within-Between Physics), and every model scores below zero on the organization-grouped split of this subset. There the baseline ($-0.179$) does better than the constrained protocol model ($-0.289$) and Within-Between Physics ($-0.327$). The external test confirms it. Predicting a new organization's net survey from other organizations' net surveys remains unsolved.
 
-\begin{figure*}[!t]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_surface_censored.pdf}
-\caption{(a) Mean \Rsq{} on the surface-net subset over ten study-grouped fold assignments, with the range across assignments. (b) Unseen-study \Rsq{} on detected samples, with the held-out negative log-likelihood (NLL, lower is better) on all samples. Dashed lines are the study-constant oracle.}
+\caption[Surface-net subset and censored-model scores]{(a) Mean \Rsq{} on the surface-net subset over ten study-grouped fold assignments, with the range across assignments. (b) Unseen-study \Rsq{} on detected samples, with the held-out negative log-likelihood (NLL, lower is better) on all samples. Dashed lines are the study-constant oracle.}
 \label{fig:physics}
-\end{figure*}
+\end{figure}
 
-\subsection{Non-Detects}
+\section{Non-Detects}
 
-Table~\ref{tab:censored} and Fig.~\ref{fig:physics}b score the censored models. Separating detection from level does most of the work. The same all-feature LightGBM, fitted to detected samples with the same all-feature detection classifier, raises \Rsq{} on detected samples from 0.493 to 0.708 and lowers NLL from 2.005 to 1.714. The protocol constraints raise \Rsq{} to 0.798, and the drifter term to 0.815. These scores are conditional on detection. They cover fewer samples with a different target variance than the all-sample scores in Table~\ref{tab:v2}, so the two cannot be compared directly. The two-part Within-Between Physics model gives the best held-out likelihood (NLL 1.519, against 1.691 for the Tobit model and 2.005 for the baseline). It also predicts the level of detected samples best, with \Rsq{}~=~0.815 and MAE~=~0.633 (a factor of 4.3). In that model 80.9\% of detected samples fall within a factor of ten and 1.3\% are off by more than a factor of 100. The oracle on detected samples reaches 0.882 and an MAE of 0.501. The Tobit model ranks detections best (AUC 0.700 against 0.630), because detection and level share one function. Its detection probabilities are worse calibrated, though (log-loss 0.697 against 0.642), and its level for detected samples is less accurate (\Rsq{}~=~0.723). Every model predicts zeros poorly. That points at sampled volume, which the export does not record.
+Table~\ref{tab:censored} and Figure~\ref{fig:physics}b score the censored models. Separating detection from level does most of the work. The same all-feature LightGBM, fitted to detected samples with the same all-feature detection classifier, raises \Rsq{} on detected samples from 0.493 to 0.708 and lowers NLL from 2.005 to 1.714. The protocol constraints raise \Rsq{} to 0.798, and the drifter term to 0.815. These scores are conditional on detection. They cover fewer samples with a different target variance than the all-sample scores in Table~\ref{tab:v2}, so the two cannot be compared directly. The two-part Within-Between Physics model gives the best held-out likelihood (NLL 1.519, against 1.691 for the Tobit model and 2.005 for the baseline). It also predicts the level of detected samples best, with \Rsq{}~=~0.815 and MAE~=~0.633 (a factor of 4.3). In that model 80.9\% of detected samples fall within a factor of ten and 1.3\% are off by more than a factor of 100. The oracle on detected samples reaches 0.882 and an MAE of 0.501. The Tobit model ranks detections best (AUC 0.700 against 0.630), because detection and level share one function. Its detection probabilities are worse calibrated, though (log-loss 0.697 against 0.642), and its level for detected samples is less accurate (\Rsq{}~=~0.723). Every model predicts zeros poorly. That points at sampled volume, which the export does not record.
 
-\begin{table}[!t]
+\begin{table}[!htbp]
 \centering
-\caption{Censored models over ten study-grouped fold assignments. NLL is the mixed likelihood on all samples, and Det.\ is its detection part (log-loss). \Rsq{}, MAE, and errors above $100\times$ are on detected samples only. Bold marks the best value in each column, excluding the oracle.}
+\caption[Censored models for non-detects]{Censored models over ten study-grouped fold assignments. NLL is the mixed likelihood on all samples, and Det.\ is its detection part (log-loss). \Rsq{}, MAE, and errors above $100\times$ are on detected samples only. Bold marks the best value in each column, excluding the oracle.}
 \label{tab:censored}
 \setlength{\tabcolsep}{2.5pt}
 \begin{tabular}{@{}lcccccc@{}}
@@ -465,15 +620,15 @@ Study-constant oracle & -- & -- & -- & 0.882 & 0.501 & 1.1\%\\
 \end{tabular}
 \end{table}
 
-\subsection{Robustness of the Fixes}
+\section{Robustness of the Fixes}
 
 Table~\ref{tab:robustness} repeats the main comparison with the archived units and on the reduced datasets. With the archived units every model is negative, and the constrained models do worse than the baseline ($-0.184$ and $-0.168$ against $-0.088$). They rely on protocol alone, and in the archived data the two largest bulk-water studies sit far below the other bulk-water studies. The constrained models beat the baseline on the full data, without the bongo-net study, and without Barrows and Dehm. With all three removed they lose (0.295 and 0.300 against 0.397) and beat the baseline in only 2 and 3 of 10 assignments. We had expected small leaves to explain this, since the reduced data leaves few bulk-water samples per leaf. Lowering the minimum leaf size from 30 to 10 changes nothing (0.297), so that explanation is wrong.
 
 The cause is that the constrained models see only protocol features, and without the fine-mesh bulk-water studies protocol carries little that transfers. On this subset protocol-only LightGBM scores 0.263 by study and $-0.085$ by organization, and 91.7\% of the samples are surface nets. Two Sea Education Association studies with the same 0.335~mm mesh hold 56\% of the samples. Grouping by organization keeps them on the same side of every split, and every model drops: the baseline to 0.162, the constrained protocol model to 0.050, and Within-Between Physics to 0.075. The baseline keeps its lead because location and time, though weak alone (0.003 by organization), help it separate studies that protocol cannot. The constraints help on the full data, where bulk water and nets differ by orders of magnitude. Their gain depends on the bulk-water studies being present. Weighted per study, the constrained models beat the baseline only on the full data (study MAE 1.021 and 1.020 against 1.041). On every other version of the data they tie or lose, for example 0.972 and 0.981 against 0.929 without the bongo-net study, and 1.000 and 1.007 against 0.998 without Barrows and Dehm. The external test (Section~\ref{sec:external}) shows the same failure on surveys the models have never seen.
 
-\begin{table}[!t]
+\begin{table}[!htbp]
 \centering
-\caption{Mean study-grouped \Rsq{} over ten fold assignments with the archived units and on reduced datasets, with the number of assignments won against the baseline in parentheses. Bold marks the best value in each row.}
+\caption[Robustness of the fixes to archived units and reduced datasets]{Mean study-grouped \Rsq{} over ten fold assignments with the archived units and on reduced datasets, with the number of assignments won against the baseline in parentheses. Bold marks the best value in each row.}
 \label{tab:robustness}
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}lcccc@{}}
@@ -489,7 +644,7 @@ Without all three & \textbf{0.397} & 0.295 (2) & 0.300 (3) & 0.297 (3)\\
 \end{tabular}
 \end{table}
 
-\section{Discussion}
+\chapter{DISCUSSION}
 
 The results support four recommendations for anyone modeling pooled microplastic data.
 
@@ -501,22 +656,22 @@ The results support four recommendations for anyone modeling pooled microplastic
 
 \emph{Calibrate intervals across studies.} Ensemble spread covers under 20\% of unseen-study samples inside NCEI and outside it. Study-grouped CQR gives close to nominal coverage in both, and flags based on the sampling method catch most of the worst errors. Its intervals are wide, which is the honest answer to how little the archive constrains a new survey.
 
-\subsection{Limitations}
+\section{Limitations}
 
 Each survey usually uses one protocol in one region, so observational data cannot fully separate the selectivity of the sampler from unrecorded laboratory practice or from sampled volume, which drives zero counts. The export records no sampled volume, station identifier, or laboratory method, so the models cannot use them. The outside pump and bottle samples come from 11 studies, and the compilation records no sampling date or depth, so we assumed both. Two of its studies come from the group behind NCEI's Yakushev~\textit{et al.} study. Eleven Japanese groups hold 62\% of the AOMI samples (56\% in the eight mainly 0.35~mm groups), and four of the kept AOMI groups come from organizations that also have studies in NCEI. We removed NCEI duplicates with a heuristic match on source, DOI, date, and location, and the protocol models are sensitive to the net depth we assume for these tows. The drift field uses annual-mean velocities, and wind-driven vertical mixing at the sampling date is untested. The bongo-net values stay unverified, and the Dehm correction rests on the abstract. The ten fold assignments reuse the same 72 studies, so their spread shows how much a score depends on the split, not how well a gain would hold on new studies. Finally, we designed each fix after inspecting out-of-fold error on the same 72 studies, and the external test suggests their gains partly reflect overfitting to these studies.
 
-\section{Conclusion}
+\chapter{CONCLUSION}
 
 On 16,988 ocean-water samples from 72 NCEI studies, random cross-validation overstates the accuracy of predictions for a new study by about 0.31 in \Rsq{}. Left uncorrected, two studies with a $10^6$ unit error turn every study-grouped \Rsq{} negative. After the correction, sampling protocol carries most of what transfers inside NCEI, through the contrast between bulk water and nets, while location and time alone score below zero. On 2,429 samples from 26 surface-net survey groups outside NCEI, no trained model beats the mean of NCEI's surface-net studies, and the protocol-based models do worst. On 571 outside pump and bottle samples, models that see mesh size beat sampler-family constants and location and time alone, though which model is best depends on the assumed sampling depth. Study-grouped CQR keeps close to nominal coverage inside NCEI (90.9\%) and outside it (93.7\%), where ensemble spread covers 15.2\% and 19.5\%. Constrained protocol trees, a within-study drift term, and a two-part model for non-detects raise scores inside NCEI. The bootstrap separates neither the constraint nor the drift-term gain from zero, the two-part gain comes mostly from modeling zeros separately, and the constrained models fail on new net surveys. Predicting zeros, future surveys, and new net surveys from other organizations is still unsolved. A larger outside test with dated pump and bottle surveys is the next step.
 
 \section*{Data and Code Availability}
+\addcontentsline{toc}{section}{Data and Code Availability}
 
 All code, the NCEI export, the AOMI, PANGAEA, and compilation downloads, the unit corrections, and the drifter field are available from the authors on request. The script \texttt{experiments.py} reproduces Tables~\ref{tab:baseline}, \ref{tab:sensitivity}, \ref{tab:intervals}, and~\ref{tab:flags}, and the environmental-covariate, calibration, and ranking results. The script \texttt{experiments\_v2.py} reproduces Tables~\ref{tab:ablation}, \ref{tab:v2}, \ref{tab:censored}, and~\ref{tab:robustness} and the bootstrap. The script \texttt{external.py} reproduces Table~\ref{tab:external} and the external interval coverage, and \texttt{paper/figures.py} draws the figures.
 
-\section*{Acknowledgment}
-
-The AOMI, NOAA NCEI, the PANGAEA data publisher, and Zhao~\textit{et al.}, through figshare, made the data used in this paper available.
-
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{REFERENCES}
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 
