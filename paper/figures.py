@@ -109,7 +109,7 @@ def benchmark() -> None:
 def dalvi_scale() -> None:
     table = pd.read_csv(ARTIFACTS / "v2_dalvi_scale.csv").set_index("model")
     series = [
-        ("Dalvi et al. (2026), reported", "Dalvi et al., reported", NEUTRAL, "s"),
+        ("Dalvi et al. (2026), reported", "Dalvi (2026), reported", NEUTRAL, "s"),
         ("LightGBM, location and time only", "LightGBM, location and time", ORANGE, "o"),
         (CONSTRAINED, "Constrained protocol", AQUA, "^"),
     ]
