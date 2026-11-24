@@ -268,7 +268,7 @@ We compare eight baselines. The study-mean predictor returns the training mean o
 \section{Validation Schemes}
 
 \begin{enumerate}
-\item \emph{Random}: five folds over samples.
+\item \emph{Random}: five folds over samples, with seed 0. Table~\ref{tab:random} repeats it over seeds 0 to 9.
 \item \emph{Study-grouped}: five folds over studies, repeated over ten random assignments of studies to folds (seeds 0 to 9). We report the mean over the ten assignments, because a single assignment can move \Rsq{} by more than 0.15.
 \item \emph{Organization-grouped}: five folds over the 49 organizations, so a second cruise by the same group cannot sit in training. We repeat it over ten assignments in the same way.
 \item \emph{Chronological}: train before 2015 and test on 2015 onward (4,638 samples), with test studies split into those seen and unseen in training.
@@ -543,6 +543,8 @@ Weighting studies equally shrinks these gains. The constrained protocol model an
 
 On the other validation schemes the ranking changes. Among the models in Table~\ref{tab:v2}, the interaction-constrained model has the highest organization-grouped \Rsq{} (0.407) and LOOO mean (0.432). It is also the only LightGBM variant above zero on post-2015 studies unseen in training (0.011, against $-0.071$ for Within-Between Physics and $-0.231$ for the baseline). Grouping by organization lowers every model by 0.09 to 0.21 against grouping by study (the baseline falls from 0.456 to 0.282). No model predicts future surveys well, and the best model depends on the kind of transfer asked for.
 
+Table~\ref{tab:random} scores the same models on random folds. There the constrained models score below the baseline (0.610 to 0.643 against 0.761), but they lose much less on new studies. The baseline drops by 0.305, the constrained protocol model by 0.067, and Within-Between Physics by 0.075. On detected samples the two-part Physics model drops by 0.045 (0.860 to 0.815), while the baseline drops by 0.350. A random split rewards a model for recognizing studies. The constraints remove most of that ability, so their random-split scores fall while their unseen-study scores rise.
+
 \begin{table}[!htbp]
 \centering
 \caption[Main models under study, organization, and leave-one-ocean-out validation]{Main models over ten study-grouped fold assignments, ten organization-grouped fold assignments (49 organizations), and strict leave-one-ocean-out. Panel (a) gives the study-grouped scores, and panel (b) the error shares and the other validation schemes. Wins count the study-grouped assignments in which a model beats baseline LightGBM. Coord.\ stage: second-stage coordinate tree. Bold marks the best value in each column, excluding the oracle.}
@@ -583,6 +585,29 @@ Within-Between Physics & 65.8\% & 7.4\% & 0.373 & 0.418 & 0.194\\
 Within-Between Physics + coord.\ stage & 65.9\% & 7.6\% & 0.362 & 0.418 & \textbf{0.203}\\
 \midrule
 Study-constant oracle (reference) & 81.5\% & 5.6\% & -- & -- & --\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[!htbp]
+\centering
+\caption[Main models on random folds against unseen studies]{Main models on random five-fold splits (mean over seeds 0 to 9) and on unseen studies (mean over ten study-grouped assignments). Drop is the random \Rsq{} minus the unseen \Rsq{}. The lower rows are scored on detected samples only. The baseline's single-seed random score in Table~\ref{tab:baseline} is 0.763. Bold marks the smallest drop in each panel.}
+\label{tab:random}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Model & Random \Rsq{} & Unseen \Rsq{} & Drop & Random MAE & Unseen MAE\\
+\midrule
+Baseline LightGBM, all features & 0.761 & 0.456 & 0.305 & 0.574 & 1.048\\
+Constrained protocol & 0.610 & 0.543 & \textbf{0.067} & 0.825 & 0.931\\
+Interaction-constrained & 0.643 & 0.511 & 0.132 & 0.742 & 0.976\\
+Within-Between Physics & 0.627 & 0.552 & 0.075 & 0.804 & 0.929\\
+\midrule
+\multicolumn{6}{@{}l}{\textit{Detected samples only}}\\
+Baseline (zeros at $-3$) & 0.843 & 0.493 & 0.350 & 0.499 & 0.980\\
+Two-part, baseline & 0.939 & 0.708 & 0.231 & 0.358 & 0.731\\
+Two-part, Physics & 0.860 & 0.815 & \textbf{0.045} & 0.526 & 0.633\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -644,6 +669,33 @@ Study-constant oracle & -- & -- & -- & 0.882 & 0.501 & 1.1\%\\
 \bottomrule
 \end{tabular}
 \end{table}
+
+Table~\ref{tab:classifier} and Figure~\ref{fig:classifier} score the detection classifier of the two-part Physics model on its own, with detection as the positive class. Train scores use the training studies of each outer fold. Validation scores use four study-grouped inner folds inside each training set, and test scores use the held-out studies. All are means over the ten assignments at a threshold of 0.5. The classifier does not beat predicting every sample as detected. On unseen studies its accuracy is 0.621 and its F1 is 0.721, against 0.708 and 0.829 for that constant. Its log-loss (0.642) is slightly worse than a constant probability equal to the training detection rate (0.638). Choosing the threshold that maximizes F1 on the validation folds (0.389 on average) turns the classifier into the constant. The pooled test AUC of 0.630 also overstates its ranking. Scored within each held-out fold, the AUC is 0.532, so most of the pooled value comes from differences in detection rate between folds, and the pooled AUCs in Table~\ref{tab:censored} share that caveat. Train log-loss keeps falling over the 150 rounds, while validation and test log-loss are lowest near rounds 13 to 15, so the classifier overfits the training studies. The two-part gains on detected samples come from the level model, not from the classifier.
+
+\begin{table}[!htbp]
+\centering
+\caption[Detection classifier of the two-part Physics model]{Detection classifier of the two-part Physics model, mean over ten study-grouped fold assignments at a threshold of 0.5. Precision, recall, and F1 treat detection as the positive class. The last row predicts every test sample as detected, with a probability equal to the training detection rate.}
+\label{tab:classifier}
+\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Split & Accuracy & Precision & Recall & F1 & AUC & Log-loss\\
+\midrule
+Train & 0.723 & 0.738 & 0.969 & 0.833 & 0.735 & 0.498\\
+Validation (inner study folds) & 0.636 & 0.736 & 0.746 & 0.733 & 0.566 & 0.685\\
+Test (unseen studies) & 0.621 & 0.749 & 0.703 & 0.721 & 0.630 & 0.642\\
+\midrule
+Always detected, test & 0.708 & 0.708 & 1.000 & 0.829 & -- & 0.638\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{fig_classifier_curve.pdf}
+\caption[Detection classifier learning curves]{(a) Log-loss and (b) AUC of the two-part Physics detection classifier against boosting rounds, averaged over ten study-grouped fold assignments. Validation uses four study-grouped inner folds inside each training set, and test uses the held-out studies.}
+\label{fig:classifier}
+\end{figure}
 
 \section{Robustness of the Fixes}
 

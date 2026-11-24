@@ -1,11 +1,11 @@
 # Progress
 
-Updated 2026-11-23.
+Updated 2026-11-25.
 
 ## Where things live
 
 - Semester project report: `paper/main.tex`, built with `tectonic`. Figures come from `paper/figures.py`, which reads `artifacts/`. It replaces the old markdown report and v2 write-up.
-- Paper experiments: `experiments.py` (baselines, sensitivity, intervals, flags) and `experiments_v2.py` (diagnosis, constrained models, Dalvi-scale LOOO, surface nets, censored models, robustness). Both import `core.py`. Run commands and checksums: `docs/replication.md` section 14.
+- Paper experiments: `experiments.py` (baselines, sensitivity, intervals, flags) `experiments_v2.py` (diagnosis, constrained models, Dalvi-scale LOOO, surface nets, censored models, robustness) and `experiments_v3.py` (detection classifier metrics and learning curve, random-split scores over 10 seeds). All import `core.py`. Run commands and checksums: `docs/replication.md` section 14.
 - Notebook `microplastics.py`: the original exploratory audit. The paper no longer quotes it (its GAMM needs R, which is not installed here). It still uses `StandardScaler` and 52 raw organization names. `environment.py` ports its environmental covariates for `experiments.py`.
 - Literature audit: `docs/literature-review.md`.
 
@@ -24,7 +24,8 @@ Findings the paper must keep stating, because they cut against the headline:
 - External test (`external.py`, Table 5.3): 3,044 samples in 39 groups absent from NCEI. AOMI v4.0 portal download, deduplicated against NCEI by organization, DOI and survey year (2,429 surface-net samples, 26 groups; 79 swapped coordinates repaired); four PANGAEA datasets (154); nine studies from the Zhao et al. 2025 subsurface compilation (461, no dates or depths, so year = publication year - 2 and depth = NCEI family median). On AOMI nets no trained model beats the study-weighted NCEI net mean (MAE 0.754 vs baseline 0.920); protocol models are worst (1.44 to 1.49) because the constrained model steps at the SEA 0.335 mm mesh and depth 0. On the 571 pump and bottle samples (97% pumps) models that see mesh size beat family constants (1.32 to 1.46) and location/time (1.37) at every assumed compilation pump depth (1, 3 or 10 m), but which model is best depends on that depth. Do not write "protocol transfers" without that caveat. Study CQR covers 93.7%. AOMI's terms ask publishers to email aomi-contact@env.go.jp before publishing; not done, since this is a semester project.
 - A bootstrap over the 72 studies separates none of the R2 gains from zero (constrained vs. baseline -0.047 to 0.198). Only the study-MAE drop from Huber plus monotonic over shallow trees is clear (-0.142 to -0.011). Paired tests over the 10 assignments remain invalid.
 - Most of the two-part gain on detected samples comes from modeling zeros separately (all-feature two-part 0.708 against 0.493). The constraints add 0.708 to 0.815.
-- The censored models are scored with one mixed likelihood, because on average 34.6% of detected samples sit below the estimated detection limit, where a Tobit likelihood is undefined. Two-part Physics wins on likelihood and level. Tobit wins only on detection AUC.
+- The censored models are scored with one mixed likelihood, because on average 34.6% of detected samples sit below the estimated detection limit, where a Tobit likelihood is undefined. Two-part Physics wins on likelihood and level. Tobit wins only on pooled detection AUC.
+- The two-part detection classifier loses to always predicting "detected" on unseen studies (accuracy 0.621 against 0.708, F1 0.721 against 0.829). Its pooled AUC of 0.630 is 0.532 within each held-out fold, so pooled AUC mostly reflects detection-rate differences between folds. The 0.815 comes from the level model.
 - Organization-grouped scores are means over 10 assignments. The single split overstated the baseline (0.405 against 0.282).
 - The drifter term adds 0.009 globally and nothing on the ln(c+1) scale. Its value is inside surface-net studies.
 - Compare with Dalvi et al. only on their ln(c+1) target (`v2_dalvi_scale.csv`), never on log10.
@@ -45,6 +46,7 @@ This is a semester project, not a journal submission. `paper/main.tex` follows t
 
 - Fill the NCEI download date in `paper/references.bib` (`[DOWNLOAD DATE PENDING]`, needs Gourab). Arnab said to leave it for now.
 - Confirm the reframed paper with Gourab.
+- Per-fold detection AUC exists only for the two-part Physics classifier. The Tobit (0.700) and two-part baseline (0.617) AUCs in Table 6.4 are pooled and may be inflated the same way.
 - Gourab needs R with `mgcv` installed to run the notebook.
 - Full `uv sync` stalls on the 291 MiB `nvidia-nccl-cu13` wheel pulled by `xgboost`. Use `xgboost-cpu` or the existing `.venv/bin/python` for CPU runs.
 - Run the experiment scripts one at a time. Running several together oversubscribes the CPU and makes each run many times slower.

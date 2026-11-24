@@ -258,18 +258,20 @@ mesh 0.333 mm, depth 0. The 12 monthly predictions are averaged on the log scale
 from any surface-net observation (BallTree haversine) are blanked.
 
 
-## 14. Paper experiments (`core.py`, `experiments.py`, `experiments_v2.py`)
+## 14. Paper experiments (`core.py`, `experiments.py`, `experiments_v2.py`, `experiments_v3.py`)
 
-The paper's tables come from two scripts that share `core.py`, so both load the same data, build the same
+The paper's tables come from three scripts that share `core.py`, so both load the same data, build the same
 features (no scaling for trees) and score the same baseline. `core.py` merges the three names NCEI uses for
 Galway-Mayo Institute of Technology and the two it uses for Italy's National Research Council, which gives 49
 organizations instead of 52. Every study-grouped and organization-grouped score is a mean over
-10 random fold assignments (`GroupKFold(5, shuffle=True, random_state=0..9)`).
+10 random fold assignments (`GroupKFold(5, shuffle=True, random_state=0..9)`). Random-split scores use
+`KFold(5, shuffle=True, random_state=0)` in `experiments.py` and seeds 0 to 9 in `experiments_v3.py`.
 
 ```sh
 .venv/bin/python experiments_v2.py   # about 6 minutes on 12 cores
 .venv/bin/python experiments.py      # about 12 minutes, needs catboost, xgboost, h5py and pyshp
 .venv/bin/python external.py        # under a minute, external test on data/aomi/, data/pangaea/ and data/zhao2025/ (needs openpyxl)
+.venv/bin/python experiments_v3.py   # about 2.5 minutes, classifier metrics, random splits and fig_classifier_curve.pdf
 .venv/bin/python paper/figures.py    # PDFs into paper/figures
 cd paper && tectonic -X compile main.tex
 ```
@@ -296,5 +298,7 @@ Checksums: 16,988 rows, 72 studies, 49 organizations, years 1972 to 2024, study-
 | `artifacts/v2_study_bootstrap.csv` | Section 6.2 | Constrained vs. baseline R² gain 0.087, 95% interval -0.047 to 0.198 |
 | `artifacts/v2_dalvi_scale.csv` | Figure 6.2 | Constrained protocol LOOO mean 0.648 on ln(c+1) |
 | `artifacts/v2_surface_nets.csv`, `v2_surface_net_ranking.csv` | Figure 6.3a | 58 studies, Within-Between Physics 0.275 |
-| `artifacts/v2_censored.csv` | Table 6.3, Figure 6.3b | Two-part Physics NLL 1.519 and positive R² 0.815, two-part baseline 0.708 |
-| `artifacts/v2_sensitivity.csv` | Table 6.4 | Without all three, baseline 0.397, Physics 0.300, baseline org-grouped 0.162 |
+| `artifacts/v2_censored.csv` | Table 6.4, Figure 6.3b | Two-part Physics NLL 1.519 and positive R² 0.815, two-part baseline 0.708 |
+| `artifacts/v3_random_split.csv` | Table 6.3 | Random 5-fold R² over seeds 0 to 9: baseline 0.761, constrained protocol 0.610, two-part Physics on detected samples 0.860 |
+| `artifacts/v3_classifier_metrics.csv`, `v3_classifier_curve.csv` | Table 6.5, Figure 6.4 | Test accuracy 0.621 and F1 0.721 against 0.708 and 0.829 always detected, AUC 0.630 pooled and 0.532 per fold |
+| `artifacts/v2_sensitivity.csv` | Table 6.6 | Without all three, baseline 0.397, Physics 0.300, baseline org-grouped 0.162 |
