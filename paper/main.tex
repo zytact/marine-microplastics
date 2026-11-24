@@ -12,7 +12,6 @@
 \usepackage{tocloft}
 \usepackage[labelsep=colon,font=normalsize,skip=6pt]{caption}
 \usepackage{enumitem}
-\usepackage{rotating}
 \usepackage[hidelinks]{hyperref}
 
 \graphicspath{{figures/}{logos/}}
@@ -538,29 +537,49 @@ Weighting studies equally shrinks these gains. The constrained protocol model an
 
 On the other validation schemes the ranking changes. Among the models in Table~\ref{tab:v2}, the interaction-constrained model has the highest organization-grouped \Rsq{} (0.407) and LOOO mean (0.432). It is also the only LightGBM variant above zero on post-2015 studies unseen in training (0.011, against $-0.071$ for Within-Between Physics and $-0.231$ for the baseline). Grouping by organization lowers every model by 0.09 to 0.21 against grouping by study (the baseline falls from 0.456 to 0.282). No model predicts future surveys well, and the best model depends on the kind of transfer asked for.
 
-\begin{sidewaystable}
+\begin{table}[!htbp]
 \centering
-\small
-\caption[Main models under study, organization, and leave-one-ocean-out validation]{Main models over ten study-grouped fold assignments, ten organization-grouped fold assignments (49 organizations), and strict leave-one-ocean-out. Wins count the study-grouped assignments in which a model beats baseline LightGBM. Bold marks the best value in each column, excluding the oracle.}
+\caption[Main models under study, organization, and leave-one-ocean-out validation]{Main models over ten study-grouped fold assignments, ten organization-grouped fold assignments (49 organizations), and strict leave-one-ocean-out. Panel (a) gives the study-grouped scores, and panel (b) the error shares and the other validation schemes. Wins count the study-grouped assignments in which a model beats baseline LightGBM. Coord.\ stage: second-stage coordinate tree. Bold marks the best value in each column, excluding the oracle.}
 \label{tab:v2}
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}lccccccccc@{}}
+\small
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}lccccc@{}}
+\multicolumn{6}{@{}l}{(a) Study-grouped}\\
 \toprule
-Model & \Rsq{} mean & Range & Wins & MAE & Study MAE & Within $10\times$ & $>100\times$ & Org.\ \Rsq & LOOO mean (min)\\
+Model & \Rsq{} mean & Range & Wins & MAE & Study MAE\\
 \midrule
-Baseline LightGBM, all features & 0.456 & 0.388--0.545 & -- & 1.048 & 1.041 & 62.0\% & 14.2\% & 0.282 & 0.208 ($-0.146$)\\
-LightGBM, protocol only & 0.428 & 0.263--0.525 & 4/10 & 1.073 & 1.281 & 63.8\% & 13.3\% & 0.218 & 0.360 (0.100)\\
-LightGBM, location and time only & $-0.022$ & $-0.083$--0.099 & 0/10 & 1.444 & 1.399 & 49.4\% & 24.6\% & $-0.117$ & $-0.333$ ($-0.788$)\\
-Constrained protocol & 0.543 & 0.433--0.567 & 9/10 & 0.931 & 1.021 & \textbf{68.3\%} & \textbf{7.1\%} & 0.367 & 0.385 (0.078)\\
-Interaction-constrained & 0.511 & 0.449--0.559 & 9/10 & 0.976 & \textbf{0.978} & 62.2\% & 8.7\% & \textbf{0.407} & \textbf{0.432} (0.126)\\
-Constrained protocol + coordinate stage & 0.543 & 0.435--0.562 & 9/10 & 0.931 & 1.014 & 67.7\% & 7.6\% & 0.370 & 0.396 (0.113)\\
-Within-Between Physics & \textbf{0.552} & 0.476--0.575 & \textbf{10/10} & \textbf{0.929} & 1.020 & 65.8\% & 7.4\% & 0.373 & 0.418 (0.194)\\
-Within-Between Physics + coordinate stage & 0.550 & 0.467--0.570 & \textbf{10/10} & 0.931 & 1.014 & 65.9\% & 7.6\% & 0.362 & 0.418 (\textbf{0.203})\\
+Baseline LightGBM, all features & 0.456 & 0.388 to 0.545 & -- & 1.048 & 1.041\\
+LightGBM, protocol only & 0.428 & 0.263 to 0.525 & 4/10 & 1.073 & 1.281\\
+LightGBM, location and time only & $-0.022$ & $-0.083$ to 0.099 & 0/10 & 1.444 & 1.399\\
+Constrained protocol & 0.543 & 0.433 to 0.567 & 9/10 & 0.931 & 1.021\\
+Interaction-constrained & 0.511 & 0.449 to 0.559 & 9/10 & 0.976 & \textbf{0.978}\\
+Constrained protocol + coord.\ stage & 0.543 & 0.435 to 0.562 & 9/10 & 0.931 & 1.014\\
+Within-Between Physics & \textbf{0.552} & 0.476 to 0.575 & \textbf{10/10} & \textbf{0.929} & 1.020\\
+Within-Between Physics + coord.\ stage & 0.550 & 0.467 to 0.570 & \textbf{10/10} & 0.931 & 1.014\\
 \midrule
-Study-constant oracle (reference) & 0.666 & -- & -- & 0.708 & 0.519 & 81.5\% & 5.6\% & -- & --\\
+Study-constant oracle (reference) & 0.666 & -- & -- & 0.708 & 0.519\\
 \bottomrule
 \end{tabular}
-\end{sidewaystable}
+
+\vspace{14pt}
+\begin{tabular}{@{}lccccc@{}}
+\multicolumn{6}{@{}l}{(b) Error shares and other validation schemes}\\
+\toprule
+Model & Within $10\times$ & $>100\times$ & Org.\ \Rsq & LOOO mean & LOOO min\\
+\midrule
+Baseline LightGBM, all features & 62.0\% & 14.2\% & 0.282 & 0.208 & $-0.146$\\
+LightGBM, protocol only & 63.8\% & 13.3\% & 0.218 & 0.360 & 0.100\\
+LightGBM, location and time only & 49.4\% & 24.6\% & $-0.117$ & $-0.333$ & $-0.788$\\
+Constrained protocol & \textbf{68.3\%} & \textbf{7.1\%} & 0.367 & 0.385 & 0.078\\
+Interaction-constrained & 62.2\% & 8.7\% & \textbf{0.407} & \textbf{0.432} & 0.126\\
+Constrained protocol + coord.\ stage & 67.7\% & 7.6\% & 0.370 & 0.396 & 0.113\\
+Within-Between Physics & 65.8\% & 7.4\% & 0.373 & 0.418 & 0.194\\
+Within-Between Physics + coord.\ stage & 65.9\% & 7.6\% & 0.362 & 0.418 & \textbf{0.203}\\
+\midrule
+Study-constant oracle (reference) & 81.5\% & 5.6\% & -- & -- & --\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{figure}[!htbp]
 \centering
